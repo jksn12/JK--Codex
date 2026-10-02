@@ -35,8 +35,8 @@ function testEnv(dataset) {
   if (dataset) kv.values.set("repository:yynxxxxx/codex-x", { value: JSON.stringify(dataset), metadata: null });
   return {
     STAR_HISTORY: kv,
-    ALLOWED_REPOSITORIES: "yynxxxxx/Codex-X",
-    REPOSITORY_ALIASES: "codex-x=yynxxxxx/Codex-X",
+    ALLOWED_REPOSITORIES: "jksn12/JK--Codex",
+    REPOSITORY_ALIASES: "codex-x=jksn12/JK--Codex",
     INGEST_TOKEN: "test-ingest",
     WEBHOOK_SECRET: "test-webhook",
   };
@@ -44,7 +44,7 @@ function testEnv(dataset) {
 
 function baseline(checkedAt = new Date().toISOString()) {
   return buildBaseline({
-    repository: "yynxxxxx/Codex-X",
+    repository: "jksn12/JK--Codex",
     createdAt: "2026-01-01T00:00:00Z",
     currentStars: 10,
     checkedAt,
@@ -79,7 +79,7 @@ test("health returns 503 when the last authoritative refresh is stale", async ()
 test("refresh ingests an Actions snapshot and stores aggregated history", async () => {
   const env = testEnv();
   const payload = {
-    repository: "yynxxxxx/Codex-X",
+    repository: "jksn12/JK--Codex",
     createdAt: "2026-01-01T00:00:00Z",
     checkedAt: "2026-01-03T00:00:00Z",
     currentStars: 2,
@@ -110,7 +110,7 @@ test("refresh ingests an Actions snapshot and stores aggregated history", async 
 test("refresh reconciles an existing baseline without Stargazer details", async () => {
   const env = testEnv(baseline("2026-01-02T00:00:00Z"));
   const payload = {
-    repository: "yynxxxxx/Codex-X",
+    repository: "jksn12/JK--Codex",
     createdAt: "2026-01-01T00:00:00Z",
     checkedAt: "2026-01-03T00:00:00Z",
     currentStars: 11,
@@ -133,12 +133,12 @@ test("refresh reconciles an existing baseline without Stargazer details", async 
 test("successful refresh schedules GitHub Camo purges", async () => {
   const env = testEnv(baseline("2026-01-02T00:00:00Z"));
   env.CAMO_PURGE_URLS = [
-    "yynxxxxx/Codex-X",
+    "jksn12/JK--Codex",
     "https://camo.githubusercontent.com/dark/chart",
     "https://camo.githubusercontent.com/light/chart",
   ].join("|");
   const payload = {
-    repository: "yynxxxxx/Codex-X",
+    repository: "jksn12/JK--Codex",
     createdAt: "2026-01-01T00:00:00Z",
     checkedAt: "2026-01-03T00:00:00Z",
     currentStars: 11,
@@ -181,7 +181,7 @@ test("webhook events use unique keys and duplicate deliveries stay idempotent", 
   const payload = JSON.stringify({
     action: "created",
     starred_at: "2026-01-02T00:01:00Z",
-    repository: { full_name: "yynxxxxx/Codex-X", stargazers_count: 11 },
+    repository: { full_name: "jksn12/JK--Codex", stargazers_count: 11 },
   });
   const signature = createHmac("sha256", env.WEBHOOK_SECRET).update(payload).digest("hex");
   const headers = {

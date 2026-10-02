@@ -153,6 +153,7 @@ export type ProvidersPageProps = {
   testingId: string;
   actionBusy?: string;
   orderBusy?: boolean;
+  listFooter?: ReactNode;
   onReorderProviders: (order: string[]) => Promise<boolean>;
   editingProviderId: string | null;
   creatingProvider: boolean;
@@ -400,6 +401,7 @@ function ListPage({
   testingId,
   actionBusy,
   orderBusy,
+  listFooter,
   onImportCcSwitch,
   onAddProvider,
   onEnableProvider,
@@ -408,7 +410,7 @@ function ListPage({
   onDuplicateProvider,
   onDeleteProvider,
   onReorderProviders,
-}: Pick<ProvidersPageProps, "lang" | "configDir" | "copy" | "providerRows" | "loading" | "testingId" | "actionBusy" | "orderBusy" | "onReorderProviders" | "onImportCcSwitch" | "onAddProvider" | "onEnableProvider" | "onTestProvider" | "onEditProvider" | "onDuplicateProvider" | "onDeleteProvider">) {
+}: Pick<ProvidersPageProps, "lang" | "configDir" | "copy" | "providerRows" | "loading" | "testingId" | "actionBusy" | "orderBusy" | "listFooter" | "onReorderProviders" | "onImportCcSwitch" | "onAddProvider" | "onEnableProvider" | "onTestProvider" | "onEditProvider" | "onDuplicateProvider" | "onDeleteProvider">) {
   const [providerToDelete, setProviderToDelete] = useState<ProviderRow | null>(null);
   const [quotaSelection, setQuotaSelection] = useState<{ id: string; configDir: string; email: string | null } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -642,6 +644,7 @@ function ListPage({
             </article>
           );
         })}
+        {listFooter && <div className="cx-providers-list-footer">{listFooter}</div>}
       </div>
 
       <OfficialQuotaDialog

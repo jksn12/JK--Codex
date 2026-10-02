@@ -38,3 +38,10 @@ codex-new-ui/
 
 # Release artifacts
 release-assets/
+
+# Local merged deliverables and working backups
+dist-merged/
+source-backups/
+
+# Generated bundled backend (rebuilt by prepare-jikepo-runtime.mjs)
+apps/desktop/src-tauri/resources/jikepo/jikepo-backend.zip

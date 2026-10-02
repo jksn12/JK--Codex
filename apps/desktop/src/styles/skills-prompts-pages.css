@@ -1628,3 +1628,14 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+.cx-skills-page--merged {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.cx-skills-page--merged .cx-skills-list-panel {
+  min-height: 520px;
+  flex: 0 0 520px;
+}

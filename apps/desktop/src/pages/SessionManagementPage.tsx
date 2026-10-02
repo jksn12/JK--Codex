@@ -106,6 +106,7 @@ export type SessionSyncStatus = {
 
 type SessionManagementPageProps = {
   active: boolean;
+  merged?: boolean;
   lang: Lang;
   sessionStatus: SessionSyncStatus | null;
   sessionHasMismatches: boolean;
@@ -173,6 +174,7 @@ function shortId(value: string) {
 
 export function SessionManagementPage({
   active,
+  merged = false,
   lang,
   sessionStatus,
   sessionHasMismatches,
@@ -570,7 +572,7 @@ export function SessionManagementPage({
         />
       </ModalShell>
 
-      <section className={cx("cx-session-page", !active && "page-pane-hidden")}>
+      <section className={cx("cx-session-page", merged && "cx-session-page--merged", !active && "page-pane-hidden")}>
         <header className="cx-session-header">
           <div className="cx-session-heading">
             <p className="cx-session-eyebrow"><RefreshCw size={13} strokeWidth={2} aria-hidden="true" />{copy.syncEyebrow}</p>

@@ -13,6 +13,7 @@ import { OverviewPage } from "./pages/OverviewPage";
 import { AboutPage, SettingsPage, TomlConfigPage } from "./pages/UtilityPages";
 import { PromptsPage } from "./pages/PromptsPage";
 import { SkillsMcpPage, type SkillsMcpNoteKind } from "./pages/SkillsMcpPage";
+import { JikepoPage } from "./pages/JikepoPage";
 import { ProvidersPage, type ProviderCopy, type ProviderRow } from "./pages/ProvidersPage";
 import { AppShell, type AppTab, type AppTheme } from "./components/AppShell";
 import {
@@ -76,7 +77,7 @@ const THEME_KEY = "codexx.theme";
 const STARTUP_WIZARD_SEEN_KEY = "codexx.startupWizardSeen";
 const ACTIVE_PROVIDER_KEY = "codexx.activeProviderId";
 const PROMPT_INJECTION_MODE_KEY = "codexx.promptInjectionMode";
-const FALLBACK_GITHUB_REPO = "yynxxxxx/Codex-X";
+const FALLBACK_GITHUB_REPO = "jksn12/JK--Codex";
 const DEFAULT_OFFICIAL_PROFILE_ID = "openai-official";
 
 type ThemeTransitionDocument = Document & {
@@ -158,11 +159,12 @@ const dict = {
     refresh: "刷新",
     nav: {
       dashboard: "概览",
-      provider: "供应商",
-      sessions: "会话管理",
-      skillsMcp: "技能和MCP",
-      instruction: "指令提示词",
-      toml: "TOML",
+      provider: "模型与 API",
+      sessions: "会话与任务",
+      skillsMcp: "技能与工具",
+      deploy: "席位与部署",
+      automation: "自动化流程",
+      instruction: "指令与配置",
       settings: "设置",
       about: "关于",
     },
@@ -246,7 +248,7 @@ const dict = {
       en: "English",
       languageDesc: "默认中文，可随时切换。设置会保存在浏览器本地存储。",
       productName: "产品名",
-      productDesc: "当前名称为 Codex-X，定位是 Codex Switch & Instruct。",
+      productDesc: "即客-Codex 已把模型配置、会话任务、技能工具、席位部署与自动化整合为一个桌面应用。",
     },
     loadingConfig: "正在读取 Codex 配置...",
     noAuth: "无 auth",
@@ -259,11 +261,12 @@ const dict = {
     refresh: "Refresh",
     nav: {
       dashboard: "Overview",
-      provider: "Provider",
-      sessions: "Sessions",
-      skillsMcp: "Skills & MCP",
-      instruction: "Prompt",
-      toml: "TOML",
+      provider: "Models & API",
+      sessions: "Sessions & Tasks",
+      skillsMcp: "Skills & Tools",
+      deploy: "Seats & Deploy",
+      automation: "Automation",
+      instruction: "Prompts & Config",
       settings: "Settings",
       about: "About",
     },
@@ -347,7 +350,7 @@ const dict = {
       en: "English",
       languageDesc: "Chinese is the default. You can switch at any time; the setting is saved locally.",
       productName: "Product name",
-      productDesc: "Current name is Codex-X, positioned as Codex Switch & Instruct.",
+      productDesc: "Jike-Codex combines model configuration, session tasks, skills, tools, deployment, and automation in one desktop app.",
     },
     loadingConfig: "Reading Codex config...",
     noAuth: "No auth",
@@ -377,7 +380,7 @@ function getProviderPageCopy(lang: Lang): ProviderCopy {
       : `“${providerName}” will be removed from the provider list. This cannot be undone.`,
     deleteCurrentDescription: (providerName) => isChinese
       ? `“${providerName}”当前正在使用。删除前会先切换到默认官方登录配置，确定继续吗？`
-      : `“${providerName}” is currently active. Codex-X will switch to the default official sign-in profile before deleting it. Continue?`,
+      : `“${providerName}” is currently active. Jike-Codex will switch to the default official sign-in profile before deleting it. Continue?`,
     deleteCancelLabel: isChinese ? "取消" : "Cancel",
     deleteConfirmLabel: isChinese ? "确认删除" : "Delete",
     noBaseUrlLabel: "no base_url",
@@ -1231,6 +1234,17 @@ function App() {
     return [rows[0], ...officialProfiles.filter((profile) => !profile.isDefault).map(officialRow), ...rows.slice(1)];
   }, [currentOfficialProfileId, detectedRows, lang, localRows, officialProfiles, state?.officialAuthAvailable, state?.model]);
 
+  const activeProviderForRelay = React.useMemo(() => {
+    const local = savedProviders.find((provider) => provider.id === effectiveActiveProviderId);
+    return {
+      name: local?.providerName || currentProvider?.name || (state?.isOfficialProvider ? "OpenAI Official" : "当前供应商"),
+      baseUrl: local?.baseUrl || currentProvider?.baseUrl || "",
+      apiKey: local?.apiKey || liveProviderApiKey || "",
+      model: state?.model || local?.model || "",
+      wireApi: local?.wireApi || currentProvider?.wireApi || (state?.isOfficialProvider ? "official" : "responses"),
+    };
+  }, [currentProvider?.baseUrl, currentProvider?.name, currentProvider?.wireApi, effectiveActiveProviderId, liveProviderApiKey, savedProviders, state?.isOfficialProvider, state?.model]);
+
   const findLocalProviderForRow = React.useCallback((row: ProviderRow) => {
     if (row.source === "official") return undefined;
     if (row.source === "local") return savedProviders.find((item) => item.id === row.id);
@@ -1496,10 +1510,10 @@ function App() {
   const configHealth = useConfigHealth({
     configDir: healthConfigDir,
     canCheck: !refreshing && !loading && !actionBusy
-      && !(tab === "provider" && providerMode !== "list") && tab !== "toml",
+      && !(tab === "provider" && providerMode !== "list"),
     canNotify: !toast && !error && !startupWizardOpen && !updatePromptOpen
       && !loading && !refreshing && !actionBusy
-      && !(tab === "provider" && providerMode !== "list") && tab !== "toml",
+      && !(tab === "provider" && providerMode !== "list"),
     lang,
     reviewing: startupWizardOpen,
     onHint: setToast,
@@ -2996,10 +3010,9 @@ function App() {
       onOpenUpdate={() => setUpdatePromptOpen(true)}
       isMacRuntime={isMacRuntime}
       contentClassName={cx(
-        tab === "sessions" && "cx-app-content--sessions",
         (
           (tab === "provider" && providerMode === "list")
-          || tab === "skillsMcp"
+          || tab === "automation"
         ) && "cx-app-content--fixed",
         skillsMcpImportOpen && Boolean(skillsMcpImportPreview) && "cx-app-content--modal-locked",
       )}
@@ -3072,7 +3085,12 @@ function App() {
       />
 
       <PageTransition pageKey={tab}>
-            {!state && tab !== "dashboard" && tab !== "settings" && tab !== "about" && (
+            {!state && (
+              tab === "provider"
+              || tab === "sessions"
+              || tab === "skillsMcp"
+              || tab === "instruction"
+            ) && (
               <CodexStateLoading lang={lang} loading={refreshing} />
             )}
 
@@ -3122,6 +3140,9 @@ function App() {
                 testingId={providerTestingId}
                 actionBusy={actionBusy}
                 orderBusy={providerOrder.directory !== state.codexDir}
+                listFooter={providerMode === "list" ? (
+                  <JikepoPage lang={lang} section="relay" embedded relayProvider={activeProviderForRelay} />
+                ) : undefined}
                 onReorderProviders={saveProviderOrder}
                 editingProviderId={editingProviderId || (editingDetectedProvider ? providerForm.id : null)}
                 providerForm={{
@@ -3253,6 +3274,7 @@ function App() {
             {state && (tab === "sessions" || visitedTabs.has("sessions")) && (
               <SessionManagementPage
                 active={tab === "sessions"}
+                merged
                 lang={lang}
                 sessionStatus={sessionStatus}
                 sessionHasMismatches={sessionHasMismatches}
@@ -3302,6 +3324,10 @@ function App() {
               />
             )}
 
+            {tab === "sessions" && (
+              <JikepoPage lang={lang} section="composer" embedded />
+            )}
+
             {state && (tab === "skillsMcp" || visitedTabs.has("skillsMcp")) && (
               <SkillsMcpPage
                 lang={lang}
@@ -3310,7 +3336,7 @@ function App() {
                 actionBusy={actionBusy}
                 importOpen={skillsMcpImportOpen}
                 importPreview={skillsMcpImportPreview}
-                className={tab !== "skillsMcp" ? "page-pane-hidden" : undefined}
+                className={tab !== "skillsMcp" ? "page-pane-hidden" : "cx-skills-page--merged"}
                 onTabChange={setSkillsMcpTab}
                 onLoad={loadSkillsMcp}
                 onOpenImportPreview={openImportExistingSkillsMcpPreview}
@@ -3324,6 +3350,22 @@ function App() {
                 noteBusyKey={skillsMcpNoteBusy}
                 onSaveNote={saveSkillsMcpNote}
               />
+            )}
+
+            {tab === "skillsMcp" && (
+              <JikepoPage lang={lang} section="toolbox" embedded />
+            )}
+
+            {tab === "deploy" && (
+              <div className="cx-merged-domain-page" aria-label={lang === "zh" ? "席位与部署" : "Seats and deployment"}>
+                <JikepoPage lang={lang} section="install" embedded />
+                <div className="cx-merged-domain-divider" />
+                <JikepoPage lang={lang} section="packs" embedded />
+              </div>
+            )}
+
+            {tab === "automation" && (
+              <JikepoPage lang={lang} section="workflow" />
             )}
 
             {state && tab === "instruction" && (
@@ -3367,11 +3409,11 @@ function App() {
                     title: lang === "zh" ? "用户原有指令提示词" : "Existing user prompt",
                     description: state.instructionInjectionMode === "append"
                       ? (lang === "zh"
-                        ? "追加模式已保留这份外部提示词，并同时加载 Codex-X 的 AGENTS.md 区块。"
+                        ? "追加模式已保留这份外部提示词，并同时加载 即客-Codex 的 AGENTS.md 区块。"
                         : "Append mode preserves this external prompt alongside the Codex-X AGENTS.md block.")
                       : (lang === "zh"
-                        ? "当前使用的是非 Codex-X 管理的外部提示词。"
-                        : "This external prompt is not managed by Codex-X."),
+                        ? "当前使用的是非即客-Codex 管理的外部提示词。"
+                        : "This external prompt is not managed by Jike-Codex."),
                     filename: currentInstructionFilename,
                   }
                   : null}
@@ -3400,7 +3442,7 @@ function App() {
               />
             )}
 
-            {state && tab === "toml" && (
+            {state && tab === "instruction" && (
               <TomlConfigPage
                 eyebrow="~/.codex/config.toml"
                 title={t.toml.title}
@@ -3415,8 +3457,8 @@ function App() {
               <AboutPage
                 copy={{
                   eyebrow: "About",
-                  title: lang === "zh" ? "关于 Codex-X" : "About Codex-X",
-                  appVersionLabel: `Codex-X ${lang === "zh" ? "版本" : "Version"}`,
+                  title: lang === "zh" ? "关于 即客-Codex" : "About Jike-Codex",
+                  appVersionLabel: `即客-Codex ${lang === "zh" ? "版本" : "Version"}`,
                   codexVersionLabel: `Codex CLI ${lang === "zh" ? "版本" : "Version"}`,
                   codexHomeLabel: "CODEX_HOME",
                   projectLabel: lang === "zh" ? "项目地址" : "Project",
@@ -3478,7 +3520,7 @@ function App() {
                   englishLabel: t.settings.en,
                   productTitle: t.settings.productName,
                   productDescription: t.settings.productDesc,
-                  productValue: "Codex-X",
+                  productValue: "即客-Codex",
                   recheckTitle: lang === "zh" ? "环境与配置检查" : "Environment & configuration check",
                   recheckDescription: lang === "zh"
                     ? "查看 Codex 环境与配置状态，按需检查和修复。"
@@ -3486,8 +3528,8 @@ function App() {
                   recheckLabel: lang === "zh" ? "检查" : "Check",
                   restartTitle: lang === "zh" ? "Codex 桌面客户端" : "Codex desktop app",
                   restartDescription: lang === "zh"
-                    ? "重新启动本机的 Codex（ChatGPT）桌面客户端，不会重启 Codex-X。"
-                    : "Restart the local Codex (ChatGPT) desktop app without restarting Codex-X.",
+                    ? "重新启动本机的 Codex（ChatGPT）桌面客户端，不会重启即客-Codex。"
+                    : "Restart the local Codex (ChatGPT) desktop app without restarting Jike-Codex.",
                   restartLabel: lang === "zh" ? "重启 Codex" : "Restart Codex",
                   restartTargetLabel: lang === "zh" ? "Codex（ChatGPT）桌面客户端" : "Codex (ChatGPT) desktop app",
                   restartConfirmTitle: lang === "zh" ? "重启 Codex？" : "Restart Codex?",

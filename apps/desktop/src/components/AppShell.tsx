@@ -1,6 +1,7 @@
 import React from "react";
 import type { ReactNode } from "react";
 import {
+  Activity,
   Blocks,
   Download,
   FileCode2,
@@ -28,8 +29,9 @@ export type AppTab =
   | "provider"
   | "sessions"
   | "skillsMcp"
+  | "deploy"
+  | "automation"
   | "instruction"
-  | "toml"
   | "settings"
   | "about";
 
@@ -37,15 +39,17 @@ type NavItem = {
   id: AppTab;
   icon: LucideIcon;
   label: Record<AppLanguage, string>;
+  groupLabel?: Record<AppLanguage, string>;
 };
 
 const NAV_ITEMS: readonly NavItem[] = [
-  { id: "dashboard", icon: LayoutDashboard, label: { zh: "概览", en: "Overview" } },
-  { id: "provider", icon: Zap, label: { zh: "供应商", en: "Providers" } },
-  { id: "sessions", icon: History, label: { zh: "会话管理", en: "Sessions" } },
-  { id: "skillsMcp", icon: Blocks, label: { zh: "技能和MCP", en: "Skills & MCP" } },
-  { id: "instruction", icon: Sparkles, label: { zh: "指令提示词", en: "Prompts" } },
-  { id: "toml", icon: FileCode2, label: { zh: "TOML", en: "TOML" } },
+  { id: "dashboard", icon: LayoutDashboard, label: { zh: "概览", en: "Overview" }, groupLabel: { zh: "工作区", en: "Workspace" } },
+  { id: "provider", icon: Zap, label: { zh: "模型与 API", en: "Models & API" } },
+  { id: "sessions", icon: History, label: { zh: "会话与任务", en: "Sessions & Tasks" } },
+  { id: "skillsMcp", icon: Blocks, label: { zh: "技能与工具", en: "Skills & Tools" } },
+  { id: "deploy", icon: Download, label: { zh: "席位与部署", en: "Seats & Deploy" }, groupLabel: { zh: "执行中心", en: "Execution" } },
+  { id: "automation", icon: Activity, label: { zh: "自动化流程", en: "Automation" } },
+  { id: "instruction", icon: Sparkles, label: { zh: "指令与配置", en: "Prompts & Config" }, groupLabel: { zh: "系统", en: "System" } },
   { id: "settings", icon: Settings, label: { zh: "设置", en: "Settings" } },
   { id: "about", icon: Info, label: { zh: "关于", en: "About" } },
 ] as const;
@@ -130,13 +134,13 @@ export function AppShell({
 
       <aside className="cx-sidebar">
         <div className="cx-brand">
-          <div className="cx-brand-mark" aria-hidden="true">X</div>
+          <div className="cx-brand-mark" aria-hidden="true">即</div>
           <div className="cx-brand-copy">
             <div className="cx-brand-title-row">
-              <h1>Codex-X</h1>
+              <h1>即客-Codex</h1>
               {appVersion && <span className="cx-app-version">v{appVersion.replace(/^v/i, "")}</span>}
             </div>
-            <p>{lang === "zh" ? "切换 · 指令 · 配置" : "Switch · Instruct · Config"}</p>
+            <p>{lang === "zh" ? "模型 · 任务 · 工具" : "Models · Tasks · Tools"}</p>
           </div>
           {updateActionState && onOpenUpdate && (
             <IconButton
@@ -159,18 +163,20 @@ export function AppShell({
             const isActive = activeTab === item.id;
 
             return (
-              <button
-                key={item.id}
-                type="button"
-                className={`cx-nav-item${isActive ? " cx-nav-item--active" : ""}`}
-                onClick={() => React.startTransition(() => onTabChange(item.id))}
-                aria-current={isActive ? "page" : undefined}
-                title={item.label[lang]}
-              >
-                <span className="cx-nav-active-mark" aria-hidden="true" />
-                <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
-                <span className="cx-nav-label">{item.label[lang]}</span>
-              </button>
+              <React.Fragment key={item.id}>
+                {item.groupLabel && <div className="cx-nav-section-label">{item.groupLabel[lang]}</div>}
+                <button
+                  type="button"
+                  className={`cx-nav-item${isActive ? " cx-nav-item--active" : ""}`}
+                  onClick={() => React.startTransition(() => onTabChange(item.id))}
+                  aria-current={isActive ? "page" : undefined}
+                  title={item.label[lang]}
+                >
+                  <span className="cx-nav-active-mark" aria-hidden="true" />
+                  <Icon size={18} strokeWidth={1.9} aria-hidden="true" />
+                  <span className="cx-nav-label">{item.label[lang]}</span>
+                </button>
+              </React.Fragment>
             );
           })}
         </nav>

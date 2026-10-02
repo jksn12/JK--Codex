@@ -629,3 +629,70 @@ html.cx-theme-fallback-transition body *::after {
   border-color: #444850;
   background: #34373e;
 }
+
+/* Unified top-level feature navigation: no nested application sidebar. */
+.cx-sidebar-nav {
+  overflow-y: auto;
+  padding-right: 3px;
+  scrollbar-width: thin;
+}
+
+.cx-nav-section-label {
+  padding: 11px 10px 3px;
+  color: #a0a5ad;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.cx-sidebar-nav .cx-nav-item {
+  height: 38px;
+}
+
+/* Related capabilities share one product page and one compact page-level switcher. */
+.cx-integrated-tabs {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--ui-border);
+  border-radius: 10px;
+  background: var(--ui-surface-muted);
+}
+
+.cx-integrated-tab {
+  min-height: 32px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--ui-text-muted);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 620;
+  cursor: pointer;
+}
+
+.cx-integrated-tab:hover {
+  color: var(--ui-text);
+  background: var(--ui-surface);
+}
+
+.cx-integrated-tab--active {
+  color: var(--ui-accent);
+  background: var(--ui-surface);
+  box-shadow: 0 1px 4px rgba(25, 38, 65, 0.1);
+}
+
+.cx-merged-domain-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.cx-merged-domain-divider {
+  height: 1px;
+  background: var(--ui-border);
+}

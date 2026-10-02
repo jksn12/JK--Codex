@@ -49,7 +49,7 @@ export function Checkbox({
         aria-hidden="true"
         className={cx("ui-checkbox__box", checked && "ui-checkbox__box--checked", indeterminate && "ui-checkbox__box--indeterminate")}
       >
-        {indeterminate ? <Minus size={13} strokeWidth={3} /> : <Check size={13} strokeWidth={3} />}
+        {indeterminate ? <Minus size={13} strokeWidth={3} /> : checked ? <Check size={13} strokeWidth={3} /> : null}
       </span>
       {(label || description) && (
         <span className="ui-checkbox__content">

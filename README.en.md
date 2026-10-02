@@ -4,16 +4,16 @@
 </p>
 
 <div align="center">
-  <img src="apps/desktop/src-tauri/icons/icon.png" alt="Codex-X Logo" width="150" />
+  <img src="apps/desktop/src-tauri/icons/icon.png" alt="Jike-Codex Logo" width="150" />
 
-  # Codex-X
+  # Jike-Codex
 
   **Codex Prompts · API / Providers · Sessions · Skills / MCP in One Place**
 
   A cross-platform desktop tool for **OpenAI Codex Desktop / Codex CLI**. Manage prompt templates, switch third-party APIs, organize / repair / permanently delete local sessions, manage Skills / MCP, and inspect TOML and login credentials without repeatedly editing configuration files by hand.
 
   <p>
-    <img src="https://img.shields.io/github/v/release/yynxxxxx/Codex-X?label=version&color=blue" alt="version" />
+    <img src="https://img.shields.io/github/v/release/jksn12/JK--Codex?label=version&color=blue" alt="version" />
     <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-555" alt="platform" />
     <img src="https://img.shields.io/badge/built%20with-Tauri%202-24C8DB" alt="tauri" />
     <img src="https://img.shields.io/badge/license-MIT-green" alt="license" />
@@ -308,7 +308,7 @@ Manage Codex capability extensions from the **Skills & MCP** page instead of sea
 ### 7. Reverse Skills Navigation
 
 <div align="center">
-  <a href="https://yynxxxxx.github.io/Codex-X/">
+  <a href="https://github.com/jksn12/JK--Codex/tree/main/docs">
     <img src="https://img.shields.io/badge/Codex--X-Online%20Reverse%20Skills%20Guide-0ea5e9?style=for-the-badge&logo=githubpages&logoColor=white" alt="Codex-X Online Reverse Skills Guide" />
   </a>
 </div>
@@ -337,7 +337,7 @@ Manage Codex capability extensions from the **Skills & MCP** page instead of sea
 </table>
 
 <p align="center">
-  <a href="https://yynxxxxx.github.io/Codex-X/">
+  <a href="https://github.com/jksn12/JK--Codex/tree/main/docs">
     <b>🚀 Open Codex-X Reverse Skills Guide</b>
   </a>
 </p>
@@ -390,7 +390,7 @@ Codex-X's own database is stored by default at:
 
 Download from the Releases page:
 
-https://github.com/yynxxxxx/Codex-X/releases
+https://github.com/jksn12/JK--Codex/releases
 
 ## Development
 
@@ -418,7 +418,7 @@ xattr -dr com.apple.quarantine /Applications/Codex-X.app
 
 ## License
 
-This project is open-sourced under the [MIT License](https://github.com/yynxxxxx/Codex-X/blob/main/LICENSE).
+This project is open-sourced under the [MIT License](https://github.com/jksn12/JK--Codex/blob/main/LICENSE).
 
 ## Thanks
 
@@ -427,7 +427,7 @@ Thanks to the [LINUX DO forum](https://linux.do/) community for attention, feedb
 ## Star History
 
 <p align="center">
-  <a href="https://github.com/yynxxxxx/Codex-X/stargazers">
+  <a href="https://github.com/jksn12/JK--Codex/stargazers">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://codex-star-history.zhihack0728.workers.dev/v1/charts/codex-x.svg?theme=dark" />
       <source media="(prefers-color-scheme: light)" srcset="https://codex-star-history.zhihack0728.workers.dev/v1/charts/codex-x.svg?theme=light" />

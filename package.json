@@ -1,7 +1,7 @@
 {
   "name": "codex-x-workspace",
   "private": true,
-  "version": "0.3.24",
+  "version": "0.3.25",
   "scripts": {
     "dev": "pnpm --dir apps/desktop tauri dev",
     "build": "pnpm --dir apps/desktop tauri build",
@@ -9,5 +9,13 @@
     "desktop:build": "pnpm --dir apps/desktop tauri build",
     "typecheck": "pnpm --dir apps/desktop typecheck"
   },
-  "author": "yynxxxxx"
+  "author": "yynxxxxx",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jksn12/JK--Codex.git"
+  },
+  "homepage": "https://github.com/jksn12/JK--Codex",
+  "bugs": {
+    "url": "https://github.com/jksn12/JK--Codex/issues"
+  }
 }

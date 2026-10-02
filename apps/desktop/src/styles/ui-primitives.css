@@ -317,3 +317,19 @@
   .ui-modal__body { padding-inline: 16px; }
   .ui-modal__footer { padding-inline: 16px; }
 }
+
+/* Native checked state is the visual source of truth; prevents stale selected styling. */
+.ui-checkbox__input:not(:checked):not(:indeterminate) + .ui-checkbox__box {
+  color: transparent;
+  background: var(--ui-surface-muted);
+  border-color: var(--ui-border);
+  box-shadow: none;
+}
+
+.ui-checkbox__input:checked + .ui-checkbox__box,
+.ui-checkbox__input:indeterminate + .ui-checkbox__box {
+  color: #fff;
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--ui-accent) 22%, transparent);
+}

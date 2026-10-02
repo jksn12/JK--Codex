@@ -4,16 +4,16 @@
 </p>
 
 <div align="center">
-  <img src="apps/desktop/src-tauri/icons/icon.png" alt="Codex-X Logo" width="150" />
+  <img src="apps/desktop/src-tauri/icons/icon.png" alt="即客-Codex Logo" width="150" />
 
-  # Codex-X
+  # 即客-Codex
 
   **Codex 可视化提示词注入 · Provider · 会话 · Skills / MCP 管理工具**
 
   一款面向 **OpenAI Codex 桌面端 / Codex CLI** 的跨平台桌面工具。把提示词模板、自定义 Prompt、第三方 API 供应商、会话同步、Skills / MCP 和 TOML 配置都放进可视化界面里，不用反复手改文件。
 
   <p>
-    <img src="https://img.shields.io/github/v/release/yynxxxxx/Codex-X?label=version&color=blue" alt="version" />
+    <img src="https://img.shields.io/github/v/release/jksn12/JK--Codex?label=version&color=blue" alt="version" />
     <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-555" alt="platform" />
     <img src="https://img.shields.io/badge/built%20with-Tauri%202-24C8DB" alt="tauri" />
     <img src="https://img.shields.io/badge/license-MIT-green" alt="license" />
@@ -228,7 +228,7 @@ Codex-X 现在不只是“几套内置 Prompt”的启动器，而是一个可�
 每次启用或禁用前都会自动创建备份。除了模板库，你也可以导入、编辑、删除自己的 `.md` 提示词，并通过分类管理把常用提示词整理成自己的工作流。
 
 > [!NOTE]
-> 如果你有好用的提示词模板，欢迎在 [Issues](https://github.com/yynxxxxx/Codex-X/issues) 提交：请附上模板名称、适用场景、Markdown 内容、推荐启用方式和必要说明。合适的模板会考虑收录到 `examples/`，让更多用户可以一键同步使用。
+> 如果你有好用的提示词模板，欢迎在 [Issues](https://github.com/jksn12/JK--Codex/issues) 提交：请附上模板名称、适用场景、Markdown 内容、推荐启用方式和必要说明。合适的模板会考虑收录到 `examples/`，让更多用户可以一键同步使用。
 
 ### 2. Provider / API：添加、检测、获取模型、随时切换
 
@@ -297,7 +297,7 @@ Codex-X 现在不只是“几套内置 Prompt”的启动器，而是一个可�
 ### 6. 逆向 Skills 导航
 
 <div align="center">
-  <a href="https://yynxxxxx.github.io/Codex-X/">
+  <a href="https://github.com/jksn12/JK--Codex/tree/main/docs">
     <img src="https://img.shields.io/badge/Codex--X-在线逆向%20Skills%20导航-0ea5e9?style=for-the-badge&logo=githubpages&logoColor=white" alt="Codex-X 在线逆向 Skills 导航" />
   </a>
 </div>
@@ -326,7 +326,7 @@ Codex-X 现在不只是“几套内置 Prompt”的启动器，而是一个可�
 </table>
 
 <p align="center">
-  <a href="https://yynxxxxx.github.io/Codex-X/">
+  <a href="https://github.com/jksn12/JK--Codex/tree/main/docs">
     <b>🚀 打开 Codex-X 逆向 Skills 导航</b>
   </a>
 </p>
@@ -379,7 +379,7 @@ Codex-X 自身数据库默认位于：
 
 请前往 Releases 页面下载：
 
-https://github.com/yynxxxxx/Codex-X/releases
+https://github.com/jksn12/JK--Codex/releases
 
 ## 开发运行
 
@@ -407,7 +407,7 @@ xattr -dr com.apple.quarantine /Applications/Codex-X.app
 
 ## 许可证
 
-本项目基于 [MIT License](https://github.com/yynxxxxx/Codex-X/blob/main/LICENSE) 开源。
+本项目基于 [MIT License](https://github.com/jksn12/JK--Codex/blob/main/LICENSE) 开源。
 
 ## 致谢 / Thanks
 
@@ -416,7 +416,7 @@ xattr -dr com.apple.quarantine /Applications/Codex-X.app
 ## Star History
 
 <p align="center">
-  <a href="https://github.com/yynxxxxx/Codex-X/stargazers">
+  <a href="https://github.com/jksn12/JK--Codex/stargazers">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://codex-star-history.zhihack0728.workers.dev/v1/charts/codex-x.svg?theme=dark" />
       <source media="(prefers-color-scheme: light)" srcset="https://codex-star-history.zhihack0728.workers.dev/v1/charts/codex-x.svg?theme=light" />

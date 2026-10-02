@@ -55,7 +55,7 @@ export function AppToast({
         ? <Loader2 className="cx-app-toast-loader" size={18} aria-hidden="true" />
         : <span className="cx-app-toast-dot" aria-hidden="true" />}
       <div className="cx-app-toast-copy">
-        <strong>{firstLine || (isError ? (lang === "zh" ? "操作失败" : "Action failed") : "Codex-X")}</strong>
+        <strong>{firstLine || (isError ? (lang === "zh" ? "操作失败" : "Action failed") : "即客-Codex")}</strong>
         {detail && <span>{detail}</span>}
       </div>
     </div>
@@ -118,7 +118,7 @@ export function UpdateDialog({
           ? "可以直接在软件内完成更新，无需重新下载安装包。"
           : "检测到新版本，可前往下载页获取对应平台的安装包。",
         downloadingTitle: "正在下载更新",
-        downloadingDescription: "请保持 Codex-X 打开，下载完成后会自动安装。",
+        downloadingDescription: "请保持即客-Codex打开，下载完成后会自动安装。",
         verifyingTitle: "正在验证安装包",
         verifyingDescription: "下载已完成，正在确认安装包完整可靠。",
         preparingTitle: "正在准备更新",
@@ -126,9 +126,9 @@ export function UpdateDialog({
         installingTitle: "正在启动安装程序",
         installingDescription: "请稍候。如系统询问是否允许安装，请确认授权。",
         handedOffTitle: "安装程序已启动",
-        handedOffDescription: "Codex-X 即将退出，请在安装窗口继续。首次升级旧版时，系统可能需要一次管理员授权。",
+        handedOffDescription: "即客-Codex 即将退出，请在安装窗口继续。首次升级旧版时，系统可能需要一次管理员授权。",
         readyTitle: "更新已准备好",
-        readyDescription: "重新启动 Codex-X 即可使用新版本。",
+        readyDescription: "重新启动即客-Codex 即可使用新版本。",
         errorTitle: "更新没有完成",
         errorDescription: updaterState.failure === "restart"
           ? "软件未能重新启动，请再试一次。"
@@ -164,7 +164,7 @@ export function UpdateDialog({
           ? "Update directly in the app without downloading the installer again."
           : "A new version is available from the download page for your platform.",
         downloadingTitle: "Downloading update",
-        downloadingDescription: "Keep Codex-X open. Installation starts automatically after download.",
+        downloadingDescription: "Keep Jike-Codex open. Installation starts automatically after download.",
         verifyingTitle: "Verifying installer",
         verifyingDescription: "Download complete. Checking the installer before making changes.",
         preparingTitle: "Preparing update",
@@ -172,14 +172,14 @@ export function UpdateDialog({
         installingTitle: "Starting installer",
         installingDescription: "Please wait. Approve the installation if your system asks for permission.",
         handedOffTitle: "Installer started",
-        handedOffDescription: "Codex-X will exit. Continue in the installer window. Upgrading an older installation may ask for administrator permission once.",
+        handedOffDescription: "Jike-Codex will exit. Continue in the installer window. Upgrading an older installation may ask for administrator permission once.",
         readyTitle: "Update is ready",
-        readyDescription: "Restart Codex-X to use the new version.",
+        readyDescription: "Restart Jike-Codex to use the new version.",
         errorTitle: "Update did not finish",
         errorDescription: updaterState.failure === "restart"
-          ? "Codex-X could not restart. Please try again."
+          ? "Jike-Codex could not restart. Please try again."
           : "Try again, or use the download page if the problem continues.",
-        idleTitle: "Codex-X is up to date",
+        idleTitle: "Jike-Codex is up to date",
         idleDescription: "There is no new version available right now.",
         current: "Current",
         latest: "New version",
@@ -415,7 +415,7 @@ export function StartupWizardDialog({
           <>
             <Button variant="ghost" onClick={onSkip}>{isChinese ? "跳过" : "Skip"}</Button>
             <Button variant="secondary" icon={<Settings size={16} />} onClick={onOpenSettings}>{isChinese ? "去设置" : "Settings"}</Button>
-            <Button icon={<CheckCircle2 size={16} />} onClick={onEnter}>{isChinese ? "进入 Codex-X" : "Enter Codex-X"}</Button>
+            <Button icon={<CheckCircle2 size={16} />} onClick={onEnter}>{isChinese ? "进入 即客-Codex" : "Enter Jike-Codex"}</Button>
           </>
         )
       )}

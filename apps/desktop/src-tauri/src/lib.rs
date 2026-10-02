@@ -26,6 +26,7 @@ mod error;
 mod failover;
 mod file_io;
 mod live_config;
+mod jikepo;
 mod paths;
 mod platform;
 mod prompts;
@@ -645,8 +646,8 @@ fn get_about_info_inner(config_dir: Option<String>) -> Result<AboutInfo> {
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         codex_version: platform::detect_codex_version(),
         codex_dir: codex_dir.display().to_string(),
-        project_url: "https://github.com/yynxxxxx/Codex-X".to_string(),
-        github_repo: "yynxxxxx/Codex-X".to_string(),
+        project_url: "https://github.com/jksn12/JK--Codex".to_string(),
+        github_repo: "jksn12/JK--Codex".to_string(),
         native_updater_supported,
     })
 }
@@ -1812,6 +1813,8 @@ pub fn run() {
         .on_window_event(desktop_lifecycle::handle_window_event)
         .invoke_handler(tauri::generate_handler![
             app_update::install_app_update,
+            jikepo::jikepo_call,
+            jikepo::jikepo_select_directory,
             get_about_info,
             restart_codex_desktop,
             check_app_update,

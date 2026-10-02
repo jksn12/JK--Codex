@@ -974,3 +974,9 @@
     animation: none;
   }
 }
+
+.cx-providers-list-footer {
+  margin-top: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--cx-provider-border-soft);
+}

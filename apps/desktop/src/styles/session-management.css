@@ -1241,3 +1241,14 @@
     animation: none;
   }
 }
+
+.cx-session-page--merged {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.cx-session-page--merged .cx-session-list-card {
+  min-height: 520px;
+  flex: 0 0 520px;
+}
