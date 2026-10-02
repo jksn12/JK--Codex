@@ -39,6 +39,7 @@ import type {
   BuiltinPromptDetail,
   BuiltinPromptStatus,
   CodexDesktopRestartResult,
+  ConfigurationProfile,
   CodexState,
   ImportResult,
   InstructionMode,
@@ -759,6 +760,10 @@ function App() {
   const [editingBuiltinPrompt, setEditingBuiltinPrompt] = React.useState<BuiltinPromptDetail | null>(null);
   const [savedProviders, setSavedProviders] = React.useState<SavedProvider[]>([]);
   const [providerOrder, setProviderOrder] = React.useState<{ directory: string; order: string[] }>({ directory: "", order: [] });
+  const [configurationProfiles, setConfigurationProfiles] = React.useState<ConfigurationProfile[]>([]);
+  const [selectedConfigurationProfileId, setSelectedConfigurationProfileId] = React.useState("");
+  const [configurationProfileName, setConfigurationProfileName] = React.useState("");
+  const [configurationProfileBusy, setConfigurationProfileBusy] = React.useState(false);
   const [officialProfiles, setOfficialProfiles] = React.useState<OfficialProfileSummary[]>([]);
   const [editingOfficialProfileId, setEditingOfficialProfileId] = React.useState<string | null>(DEFAULT_OFFICIAL_PROFILE_ID);
   const [creatingProvider, setCreatingProvider] = React.useState(false);
@@ -1416,6 +1421,9 @@ function App() {
     setError("");
     setState(null);
     setOfficialProfiles([]);
+    setConfigurationProfiles([]);
+    setSelectedConfigurationProfileId("");
+    setConfigurationProfileName("");
     setSessionStatus(null);
     setSkillsMcpState(null);
     setSkillsMcpImportOpen(false);
@@ -1504,6 +1512,103 @@ function App() {
         setError(String(nextError));
       });
   }, [clearActionBusy, configDir, configDirDraft, invalidatePromptDetail, lang, state?.codexDir]);
+
+  const loadConfigurationProfiles = React.useCallback(async (directory?: string) => {
+    const target = directory || state?.codexDir || configDir;
+    if (!target) return [];
+    try {
+      const profiles = await invoke<ConfigurationProfile[]>("list_configuration_profiles", { configDir: target });
+      setConfigurationProfiles(profiles);
+      if (selectedConfigurationProfileId && !profiles.some((profile) => profile.id === selectedConfigurationProfileId)) {
+        setSelectedConfigurationProfileId("");
+        setConfigurationProfileName("");
+      }
+      return profiles;
+    } catch (profileError) {
+      setError(String(profileError));
+      return [];
+    }
+  }, [configDir, selectedConfigurationProfileId, state?.codexDir]);
+
+  const saveConfigurationProfile = async () => {
+    const name = configurationProfileName.trim();
+    const target = state?.codexDir || configDir;
+    if (!name || !target || configurationProfileBusy) return;
+    setConfigurationProfileBusy(true);
+    const actionToken = beginActionBusy("configurationProfile");
+    setError("");
+    try {
+      const profiles = await invoke<ConfigurationProfile[]>("save_configuration_profile", {
+        configDir: target,
+        profileId: selectedConfigurationProfileId || null,
+        name,
+      });
+      setConfigurationProfiles(profiles);
+      const saved = selectedConfigurationProfileId
+        ? profiles.find((profile) => profile.id === selectedConfigurationProfileId)
+        : profiles.find((profile) => profile.name === name);
+      if (saved) {
+        setSelectedConfigurationProfileId(saved.id);
+        setConfigurationProfileName(saved.name);
+      }
+      setToast(lang === "zh" ? `配置方案“${name}”已保存` : `Profile “${name}” saved`);
+    } catch (profileError) {
+      setError(String(profileError));
+    } finally {
+      setConfigurationProfileBusy(false);
+      endActionBusy(actionToken);
+    }
+  };
+
+  const applyConfigurationProfile = async () => {
+    const target = state?.codexDir || configDir;
+    if (!selectedConfigurationProfileId || !target || configurationProfileBusy) return;
+    setConfigurationProfileBusy(true);
+    const actionToken = beginActionBusy("configurationProfile");
+    setError("");
+    try {
+      await invoke("apply_configuration_profile", {
+        configDir: target,
+        profileId: selectedConfigurationProfileId,
+      });
+      setToast(lang === "zh" ? "配置方案已应用，正在刷新状态" : "Configuration profile applied; refreshing state");
+      refresh(false);
+      await loadConfigurationProfiles(target);
+    } catch (profileError) {
+      setError(String(profileError));
+    } finally {
+      setConfigurationProfileBusy(false);
+      endActionBusy(actionToken);
+    }
+  };
+
+  const deleteConfigurationProfile = async () => {
+    const target = state?.codexDir || configDir;
+    if (!selectedConfigurationProfileId || !target || configurationProfileBusy) return;
+    setConfigurationProfileBusy(true);
+    const actionToken = beginActionBusy("configurationProfile");
+    setError("");
+    try {
+      const profiles = await invoke<ConfigurationProfile[]>("delete_configuration_profile", {
+        configDir: target,
+        profileId: selectedConfigurationProfileId,
+      });
+      setConfigurationProfiles(profiles);
+      setSelectedConfigurationProfileId("");
+      setConfigurationProfileName("");
+      setToast(lang === "zh" ? "配置方案已删除" : "Configuration profile deleted");
+    } catch (profileError) {
+      setError(String(profileError));
+    } finally {
+      setConfigurationProfileBusy(false);
+      endActionBusy(actionToken);
+    }
+  };
+
+  React.useEffect(() => {
+    if (tab !== "provider" || providerMode !== "list" || !state || refreshing) return;
+    void loadConfigurationProfiles(state.codexDir);
+  }, [loadConfigurationProfiles, providerMode, refreshing, state, tab]);
 
   // Independent of get_codex_state: this must still work when a broken TOML
   // prevents the normal app state from loading. No shared loading flags change.
@@ -3143,6 +3248,18 @@ function App() {
                 listFooter={providerMode === "list" ? (
                   <JikepoPage lang={lang} section="relay" embedded relayProvider={activeProviderForRelay} />
                 ) : undefined}
+                configurationProfiles={configurationProfiles}
+                selectedConfigurationProfileId={selectedConfigurationProfileId}
+                configurationProfileName={configurationProfileName}
+                configurationProfileBusy={configurationProfileBusy}
+                onConfigurationProfileSelect={(id) => {
+                  setSelectedConfigurationProfileId(id);
+                  setConfigurationProfileName(configurationProfiles.find((profile) => profile.id === id)?.name || "");
+                }}
+                onConfigurationProfileNameChange={setConfigurationProfileName}
+                onSaveConfigurationProfile={() => void saveConfigurationProfile()}
+                onApplyConfigurationProfile={() => void applyConfigurationProfile()}
+                onDeleteConfigurationProfile={() => void deleteConfigurationProfile()}
                 onReorderProviders={saveProviderOrder}
                 editingProviderId={editingProviderId || (editingDetectedProvider ? providerForm.id : null)}
                 providerForm={{

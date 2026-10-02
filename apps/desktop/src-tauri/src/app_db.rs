@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 
-const APP_DB_SCHEMA_VERSION: i64 = 8;
+const APP_DB_SCHEMA_VERSION: i64 = 9;
 
 struct DatabaseInitializer {
     migration_lock: Mutex<()>,
@@ -233,7 +233,17 @@ fn initialize_schema(conn: &Connection) -> Result<()> {
             codex_dir TEXT PRIMARY KEY,
             order_json TEXT NOT NULL,
             updated_at TEXT NOT NULL
-        );",
+        );
+        CREATE TABLE IF NOT EXISTS configuration_profiles (
+            id TEXT PRIMARY KEY,
+            codex_dir TEXT NOT NULL,
+            name TEXT NOT NULL,
+            snapshot_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_configuration_profiles_dir
+            ON configuration_profiles(codex_dir, updated_at DESC);",
     )
     .map_err(|e| CodexxError::Database(e.to_string()))?;
     ensure_sqlite_column(

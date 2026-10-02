@@ -137,6 +137,13 @@ export type ProviderCopy = {
   savingLabel: string;
 };
 
+
+export type ConfigurationProfileOption = {
+  id: string;
+  name: string;
+  updatedAt: string;
+};
+
 export type ProviderOfficialInfo = {
   officialUrl: ReactNode;
   authPath: ReactNode;
@@ -154,6 +161,15 @@ export type ProvidersPageProps = {
   actionBusy?: string;
   orderBusy?: boolean;
   listFooter?: ReactNode;
+  configurationProfiles?: readonly ConfigurationProfileOption[];
+  selectedConfigurationProfileId?: string;
+  configurationProfileName?: string;
+  configurationProfileBusy?: boolean;
+  onConfigurationProfileSelect?: (id: string) => void;
+  onConfigurationProfileNameChange?: (name: string) => void;
+  onSaveConfigurationProfile?: () => void;
+  onApplyConfigurationProfile?: () => void;
+  onDeleteConfigurationProfile?: () => void;
   onReorderProviders: (order: string[]) => Promise<boolean>;
   editingProviderId: string | null;
   creatingProvider: boolean;
@@ -402,6 +418,15 @@ function ListPage({
   actionBusy,
   orderBusy,
   listFooter,
+  configurationProfiles,
+  selectedConfigurationProfileId,
+  configurationProfileName,
+  configurationProfileBusy,
+  onConfigurationProfileSelect,
+  onConfigurationProfileNameChange,
+  onSaveConfigurationProfile,
+  onApplyConfigurationProfile,
+  onDeleteConfigurationProfile,
   onImportCcSwitch,
   onAddProvider,
   onEnableProvider,
@@ -410,7 +435,7 @@ function ListPage({
   onDuplicateProvider,
   onDeleteProvider,
   onReorderProviders,
-}: Pick<ProvidersPageProps, "lang" | "configDir" | "copy" | "providerRows" | "loading" | "testingId" | "actionBusy" | "orderBusy" | "listFooter" | "onReorderProviders" | "onImportCcSwitch" | "onAddProvider" | "onEnableProvider" | "onTestProvider" | "onEditProvider" | "onDuplicateProvider" | "onDeleteProvider">) {
+}: Pick<ProvidersPageProps, "lang" | "configDir" | "copy" | "providerRows" | "loading" | "testingId" | "actionBusy" | "orderBusy" | "listFooter" | "configurationProfiles" | "selectedConfigurationProfileId" | "configurationProfileName" | "configurationProfileBusy" | "onConfigurationProfileSelect" | "onConfigurationProfileNameChange" | "onSaveConfigurationProfile" | "onApplyConfigurationProfile" | "onDeleteConfigurationProfile" | "onReorderProviders" | "onImportCcSwitch" | "onAddProvider" | "onEnableProvider" | "onTestProvider" | "onEditProvider" | "onDuplicateProvider" | "onDeleteProvider">) {
   const [providerToDelete, setProviderToDelete] = useState<ProviderRow | null>(null);
   const [quotaSelection, setQuotaSelection] = useState<{ id: string; configDir: string; email: string | null } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -525,6 +550,39 @@ function ListPage({
           </button>
         </div>
       </header>
+
+      <section className="cx-configuration-profiles" aria-label={lang === "zh" ? "配置方案" : "Configuration profiles"}>
+        <div className="cx-configuration-profiles-copy">
+          <strong>{lang === "zh" ? "配置方案" : "Configuration profiles"}</strong>
+          <span>{lang === "zh" ? "保存并整套切换供应商、路由、提示词、Skills 与 MCP。" : "Save and switch providers, routing, prompts, Skills, and MCP as one profile."}</span>
+        </div>
+        <select
+          value={selectedConfigurationProfileId || ""}
+          onChange={(event) => onConfigurationProfileSelect?.(event.target.value)}
+          disabled={configurationProfileBusy}
+          aria-label={lang === "zh" ? "选择配置方案" : "Select configuration profile"}
+        >
+          <option value="">{lang === "zh" ? "新建方案" : "New profile"}</option>
+          {(configurationProfiles || []).map((profile) => <option value={profile.id} key={profile.id}>{profile.name}</option>)}
+        </select>
+        <input
+          value={configurationProfileName || ""}
+          onChange={(event) => onConfigurationProfileNameChange?.(event.target.value)}
+          placeholder={lang === "zh" ? "方案名称" : "Profile name"}
+          disabled={configurationProfileBusy}
+        />
+        <div className="cx-configuration-profiles-actions">
+          <Button size="sm" variant="secondary" icon={<FilePlus2 size={15} />} onClick={onSaveConfigurationProfile} disabled={configurationProfileBusy || !(configurationProfileName || "").trim()}>
+            {selectedConfigurationProfileId ? (lang === "zh" ? "更新" : "Update") : (lang === "zh" ? "保存当前" : "Save current")}
+          </Button>
+          <Button size="sm" icon={configurationProfileBusy ? <Loader2 size={15} className="cx-providers-spin" /> : <CheckCircle2 size={15} />} onClick={onApplyConfigurationProfile} disabled={configurationProfileBusy || !selectedConfigurationProfileId}>
+            {lang === "zh" ? "应用" : "Apply"}
+          </Button>
+          <Button size="sm" variant="ghost" icon={<Trash2 size={15} />} onClick={onDeleteConfigurationProfile} disabled={configurationProfileBusy || !selectedConfigurationProfileId}>
+            {lang === "zh" ? "删除" : "Delete"}
+          </Button>
+        </div>
+      </section>
 
       <p className="cx-providers-sort-hint">{lang === "zh" ? "拖动卡片左侧手柄调整顺序，自动保存。" : "Drag the handle on the left to reorder. Changes save automatically."}</p>
       <div className="cx-providers-list" role="list" ref={listRef}>

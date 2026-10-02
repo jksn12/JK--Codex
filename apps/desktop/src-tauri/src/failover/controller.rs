@@ -111,7 +111,7 @@ pub(crate) struct ProviderChoice {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct FailoverStatus {
-    settings: FailoverSettings,
+    pub(crate) settings: FailoverSettings,
     running: bool,
     takeover_active: bool,
     auto_failover_active: bool,

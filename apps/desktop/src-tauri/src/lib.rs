@@ -18,6 +18,7 @@ mod app_update;
 mod backups;
 mod ccswitch;
 mod config_health;
+mod configuration_profiles;
 mod config_migration;
 mod constants;
 mod context_config;
@@ -906,7 +907,7 @@ fn enable_prompt_content_inner(
     )
 }
 
-fn enable_saved_prompt_inner(
+pub(crate) fn enable_saved_prompt_inner(
     config_dir: Option<String>,
     id: String,
     injection_mode: Option<String>,
@@ -1114,6 +1115,54 @@ async fn reset_provider_failover_health(
     tauri::async_runtime::spawn_blocking(move || failover::reset_health(config_dir, provider_id))
         .await
         .map_err(|error| CodexxError::Config(format!("重置供应商健康状态失败: {error}")))?
+}
+
+#[tauri::command]
+async fn list_configuration_profiles(
+    config_dir: Option<String>,
+) -> Result<Vec<configuration_profiles::ConfigurationProfileSummary>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        configuration_profiles::list_configuration_profiles_inner(config_dir)
+    })
+    .await
+    .map_err(|error| CodexxError::Config(format!("读取配置方案失败: {error}")))?
+}
+
+#[tauri::command]
+async fn save_configuration_profile(
+    config_dir: Option<String>,
+    profile_id: Option<String>,
+    name: String,
+) -> Result<Vec<configuration_profiles::ConfigurationProfileSummary>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        configuration_profiles::save_configuration_profile_inner(config_dir, profile_id, name)
+    })
+    .await
+    .map_err(|error| CodexxError::Config(format!("保存配置方案失败: {error}")))?
+}
+
+#[tauri::command]
+async fn apply_configuration_profile(
+    config_dir: Option<String>,
+    profile_id: String,
+) -> Result<Vec<configuration_profiles::ConfigurationProfileSummary>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        configuration_profiles::apply_configuration_profile_inner(config_dir, profile_id)
+    })
+    .await
+    .map_err(|error| CodexxError::Config(format!("应用配置方案失败: {error}")))?
+}
+
+#[tauri::command]
+async fn delete_configuration_profile(
+    config_dir: Option<String>,
+    profile_id: String,
+) -> Result<Vec<configuration_profiles::ConfigurationProfileSummary>> {
+    tauri::async_runtime::spawn_blocking(move || {
+        configuration_profiles::delete_configuration_profile_inner(config_dir, profile_id)
+    })
+    .await
+    .map_err(|error| CodexxError::Config(format!("删除配置方案失败: {error}")))?
 }
 
 #[tauri::command]
@@ -1358,7 +1407,7 @@ async fn save_official_config(input: OfficialConfigInput) -> Result<ActionResult
     .map_err(|e| CodexxError::Config(format!("保存官方配置失败: {e}")))?
 }
 
-fn enable_instruction_inner(
+pub(crate) fn enable_instruction_inner(
     config_dir: Option<String>,
     template_id: &str,
     injection_mode: Option<String>,
@@ -1407,7 +1456,7 @@ async fn enable_instruction_template(
     .map_err(|e| CodexxError::Config(format!("启用指令提示词失败: {e}")))?
 }
 
-fn disable_instruction_inner(
+pub(crate) fn disable_instruction_inner(
     config_dir: Option<String>,
     delete_file: Option<bool>,
 ) -> Result<ActionResult> {
@@ -1859,6 +1908,10 @@ pub fn run() {
             get_provider_failover,
             save_provider_failover,
             reset_provider_failover_health,
+            list_configuration_profiles,
+            save_configuration_profile,
+            apply_configuration_profile,
+            delete_configuration_profile,
             save_active_provider,
             activate_saved_provider,
             delete_saved_provider,

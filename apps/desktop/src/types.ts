@@ -75,6 +75,12 @@ export type SavedPrompt = {
   content: string;
 };
 
+export type ConfigurationProfile = {
+  id: string;
+  name: string;
+  updatedAt: string;
+};
+
 export type BuiltinPromptStatus = {
   id: string;
   filename: string;
