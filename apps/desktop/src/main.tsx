@@ -164,7 +164,7 @@ const dict = {
       sessions: "会话与任务",
       skillsMcp: "技能与工具",
       deploy: "席位与部署",
-      automation: "自动化流程",
+      automation: "本机分析流水线",
       instruction: "指令与配置",
       settings: "设置",
       about: "关于",

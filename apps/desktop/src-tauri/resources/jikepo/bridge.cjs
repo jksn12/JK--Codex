@@ -181,6 +181,13 @@ async function dispatch(method, args = []) {
     }
     case "workflow-cancel": return workflowEngine.cancel(args[0]);
     case "workflow-clear": return workflowEngine.clear(args[0]);
+    case "workflow-reveal": {
+      const task = workflowEngine.get(args[0]);
+      if (!task) throw new Error("工作流任务不存在");
+      const target = task.artifactDir || (task.reportPath ? path.dirname(task.reportPath) : null);
+      if (!target) throw new Error("当前任务还没有生成证据目录");
+      return openPath(target);
+    }
     case "workflow-events": return workflowEvents.splice(0, workflowEvents.length);
     case "ida-status": return idaMcp.probeIdaMcp(args[0] || {});
     case "ida-call": {

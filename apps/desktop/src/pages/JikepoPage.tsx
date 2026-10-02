@@ -71,9 +71,14 @@ type WorkflowTask = {
   label?: string;
   target?: string;
   currentStage?: { id?: string; label?: string } | null;
+  processed?: number;
   completed?: number;
+  warnings?: number;
+  skipped?: number;
   failed?: number;
   stageCount?: number;
+  artifactDir?: string | null;
+  reportPath?: string | null;
   error?: string | null;
   stages?: Array<{
     id: string;
@@ -93,6 +98,25 @@ type ToolHealth = {
   total?: number;
   tools?: Array<{ id: string; label: string; category: string; ok: boolean; detail?: string; error?: string }>;
 };
+
+
+const WORKFLOW_STATUS: Record<string, { label: string; tone: "neutral" | "info" | "success" | "warning" | "danger" }> = {
+  pending: { label: "等待", tone: "neutral" },
+  queued: { label: "排队中", tone: "info" },
+  running: { label: "执行中", tone: "info" },
+  paused: { label: "已暂停", tone: "warning" },
+  "needs-input": { label: "等待输入", tone: "warning" },
+  completed: { label: "已完成", tone: "success" },
+  completed_with_warnings: { label: "完成但有警告", tone: "warning" },
+  warning: { label: "执行警告", tone: "warning" },
+  skipped: { label: "已跳过", tone: "neutral" },
+  failed: { label: "失败", tone: "danger" },
+  cancelled: { label: "已取消", tone: "neutral" },
+};
+
+function workflowStatus(value?: string) {
+  return WORKFLOW_STATUS[value || ""] || { label: value || "未启动", tone: "neutral" as const };
+}
 
 type JikepoMeta = {
   activation?: string;
@@ -219,6 +243,7 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
   const [workflowTimeout, setWorkflowTimeout] = React.useState(45);
   const [workflowPlan, setWorkflowPlan] = React.useState<JsonObject | null>(null);
   const [workflowTask, setWorkflowTask] = React.useState<WorkflowTask | null>(null);
+  const [workflowExpandedStage, setWorkflowExpandedStage] = React.useState("");
   const [toolHealth, setToolHealth] = React.useState<ToolHealth | null>(null);
   const [idaUrl, setIdaUrl] = React.useState("http://127.0.0.1:13337/mcp");
   const [idaStatus, setIdaStatus] = React.useState<JsonObject | null>(null);
@@ -495,7 +520,16 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
     const args = action === "resume" ? [{ id: taskId, input: {} }] : [taskId];
     const result = await run(method, () => callJikepo<WorkflowTask | boolean>(method, args));
     if (typeof result === "object" && result) setWorkflowTask(result);
-    if (action === "clear" && result) setWorkflowTask(null);
+    if (action === "clear" && result) {
+      setWorkflowTask(null);
+      setWorkflowExpandedStage("");
+    }
+  };
+
+  const revealWorkflowArtifacts = async () => {
+    const taskId = workflowTask?.taskId || workflowTask?.id;
+    if (!taskId) return;
+    await run("workflow-reveal", () => callJikepo<string>("workflow-reveal", [taskId]), "已打开证据目录");
   };
 
   const probeIda = async () => {
@@ -702,54 +736,106 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
       );
     }
 
-    if (section === "workflow") return (
-      <div className="jk-pane">
-        <PaneHeader eyebrow="LOCAL ORCHESTRATOR" title="本机工具工作流与 IDA MCP" description="计划、启动、暂停、恢复和取消都在新界面完成；任务调用的是原即客破工作流引擎。" actions={<Button variant="secondary" size="sm" onClick={() => void loadWorkflow()} icon={<RefreshCw size={15} />}>刷新工具</Button>} />
-        <div className="jk-workflow-grid">
-          <section className="jk-card">
-            <div className="jk-card-title"><div><span>INPUT</span><h3>任务参数</h3></div><StatusBadge tone={toolHealth?.available ? "info" : "neutral"}>{toolHealth?.available || 0}/{toolHealth?.total || 0} 工具</StatusBadge></div>
-            <div className="jk-form-grid">
-              <Field label="工作流类型"><select value={workflowMode} onChange={(event) => { setWorkflowMode(event.target.value); setWorkflowPlan(null); }}>{workflowTemplates.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></Field>
-              <Field label="超时（秒）"><input type="number" min={1} max={900} value={workflowTimeout} onChange={(event) => setWorkflowTimeout(Number(event.target.value))} /></Field>
-              <Field label="目标 / 主机 / 样本路径" wide><input value={workflowTarget} onChange={(event) => setWorkflowTarget(event.target.value)} placeholder="HOST / URL / /path/to/sample" /></Field>
-              <Field label="字典路径"><input value={workflowWordlist} onChange={(event) => setWorkflowWordlist(event.target.value)} placeholder="可选" /></Field>
-              <Field label="证据输出目录"><input value={workflowArtifactDir} onChange={(event) => setWorkflowArtifactDir(event.target.value)} placeholder="可选" /></Field>
-            </div>
-            <div className="jk-card-actions"><Button variant="secondary" onClick={() => void planWorkflow()} icon={<FileCode2 size={15} />}>生成计划</Button><Button onClick={() => void startWorkflow()} disabled={Boolean(busy)} icon={<Play size={15} />}>启动工作流</Button></div>
-          </section>
-          <section className="jk-card">
-            <div className="jk-card-title"><div><span>PLAN</span><h3>阶段计划</h3></div><StatusBadge>{Array.isArray(workflowPlan?.stages) ? workflowPlan.stages.length : 0} 阶段</StatusBadge></div>
-            <div className="jk-stage-list">
-              {(Array.isArray(workflowPlan?.stages) ? workflowPlan.stages as Array<JsonObject> : []).map((stage, index) => <div key={String(stage.id || index)}><b>{String(index + 1).padStart(2, "0")}</b><div><strong>{String(stage.label || stage.id)}</strong><span>{String(stage.kind || "step")} · {String(stage.tool || "编排器")}</span></div></div>)}
-              {!workflowPlan && <p className="jk-empty">填写目标后生成执行计划。</p>}
-            </div>
-          </section>
-        </div>
-        <section className="jk-card">
-          <div className="jk-card-title"><div><span>RUNTIME</span><h3>任务执行</h3></div><StatusBadge tone={workflowTask?.status === "completed" ? "success" : workflowTask?.status === "failed" ? "danger" : "info"}>{workflowTask?.status || "未启动"}</StatusBadge></div>
-          <div className="jk-progress"><span style={{ width: `${workflowTask?.stageCount ? Math.round(((workflowTask.completed || 0) / workflowTask.stageCount) * 100) : 0}%` }} /></div>
-          <div className="jk-stage-list jk-stage-list--runtime">
-            {(workflowTask?.stages || []).map((stage, index) => <div key={stage.id} data-status={stage.status}><b>{String(index + 1).padStart(2, "0")}</b><div><strong>{stage.label}</strong><span>{stage.kind} · {stage.tool || "编排器"}</span></div><StatusBadge tone={stage.status === "completed" ? "success" : stage.status === "failed" ? "danger" : "neutral"}>{stage.status}</StatusBadge></div>)}
-            {!workflowTask && <p className="jk-empty">尚未启动任务。</p>}
+    if (section === "workflow") {
+      const taskStatus = workflowStatus(workflowTask?.status);
+      const progress = workflowTask?.stageCount
+        ? Math.round(((workflowTask.processed || 0) / workflowTask.stageCount) * 100)
+        : 0;
+      const selectedTemplate = workflowTemplates.find((item) => item.id === workflowMode);
+      return (
+        <div className="jk-pane">
+          <PaneHeader
+            eyebrow="LOCAL ANALYSIS PIPELINE"
+            title="本机分析流水线"
+            description="按阶段调用本机已经安装的分析工具；它不是定时任务，也不会在后台接管整台电脑。"
+            actions={<Button variant="secondary" size="sm" onClick={() => void loadWorkflow()} icon={<RefreshCw size={15} />}>刷新工具</Button>}
+          />
+          <div className="jk-workflow-notice">
+            网络检查模板仅用于你拥有或已获得明确授权的目标。未安装、执行失败和成功完成会分别显示，不再把跳过阶段算作成功。
           </div>
-          {workflowTask?.error && <p className="jk-inline-error">{workflowTask.error}</p>}
-          <div className="jk-card-actions"><Button size="sm" variant="secondary" onClick={() => void workflowAction("pause")} disabled={!workflowTask}>暂停</Button><Button size="sm" variant="secondary" onClick={() => void workflowAction("resume")} disabled={!workflowTask}>恢复</Button><Button size="sm" variant="danger" onClick={() => void workflowAction("cancel")} disabled={!workflowTask}>取消</Button><Button size="sm" variant="ghost" onClick={() => void workflowAction("clear")} disabled={!workflowTask}>清除</Button></div>
-        </section>
-        <div className="jk-two-column">
+          <div className="jk-workflow-grid">
+            <section className="jk-card">
+              <div className="jk-card-title"><div><span>INPUT</span><h3>任务参数</h3></div><StatusBadge tone={toolHealth?.available ? "info" : "neutral"}>{toolHealth?.available || 0}/{toolHealth?.total || 0} 工具可用</StatusBadge></div>
+              <div className="jk-form-grid">
+                <Field label="流水线类型"><select value={workflowMode} onChange={(event) => { setWorkflowMode(event.target.value); setWorkflowPlan(null); }}>{workflowTemplates.map((item) => <option value={item.id} key={item.id}>{item.label}</option>)}</select></Field>
+                <Field label="单阶段超时（秒）"><input type="number" min={1} max={900} value={workflowTimeout} onChange={(event) => setWorkflowTimeout(Number(event.target.value))} /></Field>
+                <Field label="目标 / 主机 / 样本路径" wide><input value={workflowTarget} onChange={(event) => setWorkflowTarget(event.target.value)} placeholder="HOST / URL / /path/to/sample" /></Field>
+                <Field label="字典路径"><input value={workflowWordlist} onChange={(event) => setWorkflowWordlist(event.target.value)} placeholder="ffuf 等工具使用，可选" /></Field>
+                <Field label="证据输出目录"><input value={workflowArtifactDir} onChange={(event) => setWorkflowArtifactDir(event.target.value)} placeholder="未填写时使用系统临时目录" /></Field>
+              </div>
+              {selectedTemplate && <p className="jk-card-copy">{selectedTemplate.description} 实际阶段工具：{selectedTemplate.toolIds.join("、") || "仅编排器"}。</p>}
+              <div className="jk-card-actions"><Button variant="secondary" onClick={() => void planWorkflow()} icon={<FileCode2 size={15} />}>生成计划</Button><Button onClick={() => void startWorkflow()} disabled={Boolean(busy)} icon={<Play size={15} />}>启动流水线</Button></div>
+            </section>
+            <section className="jk-card">
+              <div className="jk-card-title"><div><span>PLAN</span><h3>阶段计划</h3></div><StatusBadge>{Array.isArray(workflowPlan?.stages) ? workflowPlan.stages.length : 0} 阶段</StatusBadge></div>
+              <div className="jk-stage-list">
+                {(Array.isArray(workflowPlan?.stages) ? workflowPlan.stages as Array<JsonObject> : []).map((stage, index) => <div className="jk-stage-row" key={String(stage.id || index)}><b>{String(index + 1).padStart(2, "0")}</b><div><strong>{String(stage.label || stage.id)}</strong><span>{String(stage.kind || "step")} · {String(stage.tool || "编排器")}{stage.optional ? " · 可选" : ""}</span></div></div>)}
+                {!workflowPlan && <p className="jk-empty">填写目标后生成执行计划；生成计划不会运行任何工具。</p>}
+              </div>
+            </section>
+          </div>
           <section className="jk-card">
-            <div className="jk-card-title"><div><span>TOOL HEALTH</span><h3>本机工具</h3></div></div>
-            <div className="jk-tool-list">{(toolHealth?.tools || []).map((tool) => <div key={tool.id}><span className={tool.ok ? "ok" : "missing"}>{tool.ok ? <CheckCircle2 size={15} /> : <XCircle size={15} />}</span><div><strong>{tool.label}</strong><small>{tool.detail || tool.error || tool.category}</small></div></div>)}</div>
+            <div className="jk-card-title">
+              <div><span>RUNTIME</span><h3>任务执行</h3></div>
+              <div className="jk-runtime-summary">
+                {Boolean(workflowTask?.warnings) && <StatusBadge tone="warning">{workflowTask?.warnings} 警告</StatusBadge>}
+                {Boolean(workflowTask?.skipped) && <StatusBadge tone="neutral">{workflowTask?.skipped} 跳过</StatusBadge>}
+                {Boolean(workflowTask?.failed) && <StatusBadge tone="danger">{workflowTask?.failed} 失败</StatusBadge>}
+                <StatusBadge tone={taskStatus.tone}>{taskStatus.label}</StatusBadge>
+              </div>
+            </div>
+            <div className="jk-progress" aria-label={`流水线进度 ${progress}%`}><span style={{ width: `${progress}%` }} /></div>
+            <div className="jk-stage-list jk-stage-list--runtime">
+              {(workflowTask?.stages || []).map((stage, index) => {
+                const status = workflowStatus(stage.status);
+                const expanded = workflowExpandedStage === stage.id;
+                return (
+                  <React.Fragment key={stage.id}>
+                    <button
+                      type="button"
+                      className="jk-stage-row jk-stage-row--button"
+                      data-status={stage.status}
+                      disabled={!stage.result}
+                      aria-expanded={expanded}
+                      onClick={() => setWorkflowExpandedStage(expanded ? "" : stage.id)}
+                    >
+                      <b>{String(index + 1).padStart(2, "0")}</b>
+                      <div><strong>{stage.label}</strong><span>{stage.kind} · {stage.tool || "编排器"}{stage.result ? " · 点击查看输出" : ""}</span></div>
+                      <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                    </button>
+                    {expanded && stage.result && <div className="jk-stage-output"><JsonResult value={stage.result} maxHeight={280} /></div>}
+                  </React.Fragment>
+                );
+              })}
+              {!workflowTask && <p className="jk-empty">尚未启动任务。</p>}
+            </div>
+            {workflowTask?.error && <p className="jk-inline-error">{workflowTask.error}</p>}
+            {workflowTask?.reportPath && <div className="jk-report-path"><span>报告</span><code>{workflowTask.reportPath}</code></div>}
+            <div className="jk-card-actions">
+              <Button size="sm" variant="secondary" onClick={() => void workflowAction("pause")} disabled={!workflowTask || workflowTask.status !== "running"}>暂停</Button>
+              <Button size="sm" variant="secondary" onClick={() => void workflowAction("resume")} disabled={!workflowTask || !["paused", "needs-input"].includes(workflowTask.status || "")}>恢复</Button>
+              <Button size="sm" variant="danger" onClick={() => void workflowAction("cancel")} disabled={!workflowTask || !["queued", "running", "paused", "needs-input"].includes(workflowTask.status || "")}>取消</Button>
+              <Button size="sm" variant="ghost" onClick={() => void workflowAction("clear")} disabled={!workflowTask}>清除</Button>
+              <Button size="sm" variant="secondary" icon={<FolderOpen size={14} />} onClick={() => void revealWorkflowArtifacts()} disabled={!workflowTask?.artifactDir}>打开证据目录</Button>
+              <Button size="sm" variant="ghost" icon={<Clipboard size={14} />} onClick={() => { if (workflowTask?.reportPath) void copyText(workflowTask.reportPath).then(() => setNotice("报告路径已复制")); }} disabled={!workflowTask?.reportPath}>复制报告路径</Button>
+            </div>
           </section>
-          <section className="jk-card">
-            <div className="jk-card-title"><div><span>IDA MCP</span><h3>探测与工具调用</h3></div><StatusBadge tone={idaStatus?.ok ? "success" : "neutral"}>{idaStatus?.ok ? "在线" : "未探测"}</StatusBadge></div>
-            <Field label="MCP 地址"><input value={idaUrl} onChange={(event) => setIdaUrl(event.target.value)} /></Field>
-            <div className="jk-inline-fields"><input value={idaTool} onChange={(event) => setIdaTool(event.target.value)} placeholder="server_health" /><input value={idaArgs} onChange={(event) => setIdaArgs(event.target.value)} placeholder="{}" /></div>
-            <div className="jk-card-actions"><Button variant="secondary" size="sm" onClick={() => void probeIda()} icon={<Activity size={15} />}>探测</Button><Button size="sm" onClick={() => void callIda()} icon={<TerminalSquare size={15} />}>调用工具</Button></div>
-            <JsonResult value={idaResult || idaStatus} maxHeight={240} />
-          </section>
+          <div className="jk-two-column">
+            <section className="jk-card">
+              <div className="jk-card-title"><div><span>TOOL HEALTH</span><h3>本机工具</h3></div><StatusBadge tone={toolHealth?.available ? "info" : "neutral"}>{toolHealth?.available || 0} 可用 · {(toolHealth?.total || 0) - (toolHealth?.available || 0)} 未安装</StatusBadge></div>
+              <div className="jk-tool-list">{(toolHealth?.tools || []).map((tool) => <div key={tool.id}><span className={tool.ok ? "ok" : "missing"}>{tool.ok ? <CheckCircle2 size={15} /> : <XCircle size={15} />}</span><div><strong>{tool.label}</strong><small>{tool.ok ? tool.detail || tool.category : tool.error || "未安装"}</small></div></div>)}</div>
+            </section>
+            <section className="jk-card">
+              <div className="jk-card-title"><div><span>IDA MCP</span><h3>探测与工具调用</h3></div><StatusBadge tone={idaStatus?.ok ? "success" : "neutral"}>{idaStatus?.ok ? "在线" : "未探测"}</StatusBadge></div>
+              <Field label="MCP 地址"><input value={idaUrl} onChange={(event) => setIdaUrl(event.target.value)} /></Field>
+              <div className="jk-inline-fields"><input value={idaTool} onChange={(event) => setIdaTool(event.target.value)} placeholder="server_health" /><input value={idaArgs} onChange={(event) => setIdaArgs(event.target.value)} placeholder="{}" /></div>
+              <div className="jk-card-actions"><Button variant="secondary" size="sm" onClick={() => void probeIda()} icon={<Activity size={15} />}>探测</Button><Button size="sm" onClick={() => void callIda()} icon={<TerminalSquare size={15} />}>调用工具</Button></div>
+              <JsonResult value={idaResult || idaStatus} maxHeight={240} />
+            </section>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
 
     if (section === "toolbox") {
       const toolboxFiles = Array.isArray(toolboxStatus?.files) ? toolboxStatus.files as Array<JsonObject> : [];

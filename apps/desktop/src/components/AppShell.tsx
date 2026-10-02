@@ -48,7 +48,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { id: "sessions", icon: History, label: { zh: "会话与任务", en: "Sessions & Tasks" } },
   { id: "skillsMcp", icon: Blocks, label: { zh: "技能与工具", en: "Skills & Tools" } },
   { id: "deploy", icon: Download, label: { zh: "席位与部署", en: "Seats & Deploy" }, groupLabel: { zh: "执行中心", en: "Execution" } },
-  { id: "automation", icon: Activity, label: { zh: "自动化流程", en: "Automation" } },
+  { id: "automation", icon: Activity, label: { zh: "本机分析流水线", en: "Local Pipelines" } },
   { id: "instruction", icon: Sparkles, label: { zh: "指令与配置", en: "Prompts & Config" }, groupLabel: { zh: "系统", en: "System" } },
   { id: "settings", icon: Settings, label: { zh: "设置", en: "Settings" } },
   { id: "about", icon: Info, label: { zh: "关于", en: "About" } },

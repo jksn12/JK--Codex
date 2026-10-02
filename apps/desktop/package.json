@@ -1,6 +1,6 @@
 {
   "name": "codex-x",
-  "version": "0.3.26",
+  "version": "0.3.27",
   "private": true,
   "description": "Codex Switch & Instruct desktop manager",
   "type": "module",
@@ -12,7 +12,8 @@
     "build:renderer": "node scripts/prepare-jikepo-runtime.mjs && vite build",
     "typecheck": "tsc --noEmit",
     "prepare:jikepo-runtime": "node scripts/prepare-jikepo-runtime.mjs",
-    "test:jikepo-relay": "node scripts/test-jikepo-relay.mjs"
+    "test:jikepo-relay": "node scripts/test-jikepo-relay.mjs",
+    "test:jikepo-workflow": "node scripts/test-jikepo-workflow.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",
