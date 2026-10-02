@@ -77,6 +77,7 @@ async function transaction(action, payload = {}) {
   if (action === "preview") return seatTransactions.preview(payload.seat);
   if (action === "file") return seatTransactions.file(payload.id, payload.index);
   if (action === "verify") return seatTransactions.verify(payload.seat);
+  if (action === "verify-pending") return seatTransactions.verifyPlan(String(payload.id || ""));
   if (action === "history") return seatTransactions.history();
   if (action === "deploy" || action === "restore") {
     if (payload.confirm !== true) throw new Error("请先确认文件操作");

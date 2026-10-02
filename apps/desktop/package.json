@@ -1,6 +1,6 @@
 {
   "name": "codex-x",
-  "version": "0.3.28",
+  "version": "0.3.29",
   "private": true,
   "description": "Codex Switch & Instruct desktop manager",
   "type": "module",
@@ -14,7 +14,8 @@
     "prepare:jikepo-runtime": "node scripts/prepare-jikepo-runtime.mjs",
     "test:jikepo-relay": "node scripts/test-jikepo-relay.mjs",
     "test:jikepo-workflow": "node scripts/test-jikepo-workflow.mjs",
-    "generate:icons": "python3 scripts/generate-app-icons.py"
+    "generate:icons": "python3 scripts/generate-app-icons.py",
+    "test:jikepo-transactions": "node scripts/test-jikepo-transactions.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

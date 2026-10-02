@@ -22,7 +22,7 @@ import {
   XCircle,
 } from "lucide-react";
 import type { AppLanguage } from "../components/AppShell";
-import { Button, Checkbox, StatusBadge, cx } from "../components/ui";
+import { Button, Checkbox, ModalShell, StatusBadge, cx } from "../components/ui";
 import "../styles/jikepo-page.css";
 
 export type JikepoSection = "install" | "packs" | "relay" | "workflow" | "toolbox" | "composer";
@@ -89,6 +89,16 @@ type WorkflowTask = {
     optional?: boolean;
     result?: JsonObject | null;
   }>;
+};
+
+type SeatMutationRequest = {
+  action: "install" | "uninstall";
+  targets: string[];
+};
+
+type PackMutationRequest = {
+  action: "deploy" | "restore";
+  id: string;
 };
 
 type ToolHealth = {
@@ -226,6 +236,8 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
   const [packPreview, setPackPreview] = React.useState<JsonObject | null>(null);
   const [packVerify, setPackVerify] = React.useState<JsonObject | null>(null);
   const [packHistory, setPackHistory] = React.useState<PackHistory[]>([]);
+  const [seatMutationRequest, setSeatMutationRequest] = React.useState<SeatMutationRequest | null>(null);
+  const [packMutationRequest, setPackMutationRequest] = React.useState<PackMutationRequest | null>(null);
 
   const [relayKey, setRelayKey] = React.useState("");
   const [relayStatus, setRelayStatus] = React.useState<JsonObject | null>(null);
@@ -303,9 +315,9 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
   const loadPacks = React.useCallback(async (seat = packSeat) => {
     const result = await run("pack-load", async () => {
       const root = await callJikepo<{ root?: string }>("transaction", ["auto-select", { seat }]);
-      const [preview, verify, history] = await Promise.all([
-        callJikepo<JsonObject>("transaction", ["preview", { seat }]),
-        callJikepo<JsonObject>("transaction", ["verify", { seat }]),
+      const preview = await callJikepo<JsonObject>("transaction", ["preview", { seat }]);
+      const [verify, history] = await Promise.all([
+        callJikepo<JsonObject>("transaction", ["verify-pending", { id: String(preview.id || "") }]),
         callJikepo<PackHistory[]>("transaction", ["history", {}]),
       ]);
       return { root, preview, verify, history };
@@ -389,10 +401,14 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
     return () => window.clearInterval(timer);
   }, [workflowTask?.id, workflowTask?.status, workflowTask?.taskId]);
 
+  const requestMutateSeats = (action: "install" | "uninstall", targets: string[]) => {
+    if (!targets.length || busy) return;
+    setSeatMutationRequest({ action, targets });
+  };
+
   const mutateSeats = async (action: "install" | "uninstall", targets: string[]) => {
     if (!targets.length) return;
-    const verb = action === "install" ? "安装" : "卸载";
-    if (!window.confirm(`确认${verb} ${targets.length} 个席位？\n\n每个席位都会先做备份，操作完成后可在席位包页面回滚。`)) return;
+    const verb = action === "install" ? "安装 / 更新" : "卸载";
     const result = await run(`seat-${action}`, async () => {
       const outputs: unknown[] = [];
       for (const seat of targets) outputs.push(await callJikepo("beginner", [action, { seat, confirm: true }]));
@@ -401,15 +417,20 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
     if (result) await scanSeats();
   };
 
+  const confirmSeatMutation = async () => {
+    const request = seatMutationRequest;
+    if (!request) return;
+    setSeatMutationRequest(null);
+    await mutateSeats(request.action, request.targets);
+  };
+
   const choosePackDirectory = async () => {
     const selected = await invoke<{ canceled: boolean; path?: string }>("jikepo_select_directory", { seat: packSeat });
     if (selected.canceled || !selected.path) return;
     const result = await run("pack-directory", async () => {
       await callJikepo("transaction", ["select-path", { seat: packSeat, path: selected.path }]);
-      const [preview, verify] = await Promise.all([
-        callJikepo<JsonObject>("transaction", ["preview", { seat: packSeat }]),
-        callJikepo<JsonObject>("transaction", ["verify", { seat: packSeat }]),
-      ]);
+      const preview = await callJikepo<JsonObject>("transaction", ["preview", { seat: packSeat }]);
+      const verify = await callJikepo<JsonObject>("transaction", ["verify-pending", { id: String(preview.id || "") }]);
       return { preview, verify };
     }, "配置目录已切换");
     if (!result) return;
@@ -418,18 +439,33 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
     setPackVerify(result.verify);
   };
 
-  const deployPack = async () => {
+  const requestDeployPack = () => {
     const id = String(packPreview?.id || "");
-    if (!id) return;
-    if (!window.confirm(`确认把 ${SEAT_LABELS[packSeat] || packSeat} 席位包写入：\n${packRoot}\n\n原文件会先备份。`)) return;
+    if (!id || busy) return;
+    setPackMutationRequest({ action: "deploy", id });
+  };
+
+  const deployPack = async (id: string) => {
     const result = await run("pack-deploy", () => callJikepo<JsonObject>("transaction", ["deploy", { id, confirm: true }]), "席位包已部署");
     if (result) await loadPacks(packSeat);
   };
 
+  const requestRestorePack = (id: string) => {
+    if (busy) return;
+    setPackMutationRequest({ action: "restore", id });
+  };
+
   const restorePack = async (id: string) => {
-    if (!window.confirm("确认恢复这个备份版本？有冲突的文件会中止，不会强行覆盖。")) return;
     const result = await run("pack-restore", () => callJikepo<JsonObject>("transaction", ["restore", { id, confirm: true }]), "备份已恢复");
     if (result) await loadPacks(packSeat);
+  };
+
+  const confirmPackMutation = async () => {
+    const request = packMutationRequest;
+    if (!request) return;
+    setPackMutationRequest(null);
+    if (request.action === "deploy") await deployPack(request.id);
+    else await restorePack(request.id);
   };
 
   const configureRelay = async () => {
@@ -629,8 +665,8 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
                   <p>{seat.source} · {seat.layout}</p>
                 </div>
                 <div className="jk-seat-actions">
-                  <Button size="sm" onClick={() => void mutateSeats("install", [seat.seat])} disabled={Boolean(busy)}>{seat.exists ? "更新" : "安装"}</Button>
-                  <Button size="sm" variant="secondary" onClick={() => void mutateSeats("uninstall", [seat.seat])} disabled={Boolean(busy)}>卸载</Button>
+                  <Button size="sm" onClick={() => void requestMutateSeats("install", [seat.seat])} disabled={Boolean(busy)}>{seat.exists ? "更新" : "安装"}</Button>
+                  <Button size="sm" variant="secondary" onClick={() => void requestMutateSeats("uninstall", [seat.seat])} disabled={Boolean(busy)}>卸载</Button>
                   {seat.launchers?.[0]?.path && <Button size="sm" variant="ghost" onClick={() => void run("seat-open", () => callJikepo("beginner", ["open", { seat: seat.seat, path: seat.launchers?.[0]?.path }]))}>打开</Button>}
                 </div>
               </article>
@@ -639,15 +675,16 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
         </div>
         <div className="jk-sticky-actions">
           <span>已选择 {selectedSeats.size} 个席位</span>
-          <Button onClick={() => void mutateSeats("uninstall", [...selectedSeats])} variant="secondary" disabled={!selectedSeats.size || Boolean(busy)} icon={<RotateCcw size={16} />}>卸载选中</Button>
-          <Button onClick={() => void mutateSeats("install", [...selectedSeats])} disabled={!selectedSeats.size || Boolean(busy)} icon={busy === "seat-install" ? <Loader2 className="jk-spin" size={16} /> : <Save size={16} />}>安装 / 更新选中</Button>
+          <Button onClick={() => void requestMutateSeats("uninstall", [...selectedSeats])} variant="secondary" disabled={!selectedSeats.size || Boolean(busy)} icon={<RotateCcw size={16} />}>卸载选中</Button>
+          <Button onClick={() => void requestMutateSeats("install", [...selectedSeats])} disabled={!selectedSeats.size || Boolean(busy)} icon={busy === "seat-install" ? <Loader2 className="jk-spin" size={16} /> : <Save size={16} />}>安装 / 更新选中</Button>
         </div>
       </div>
     );
 
     if (section === "packs") {
       const previewFiles = Array.isArray(packPreview?.files) ? packPreview?.files as Array<JsonObject> : [];
-      const verifyFiles = Array.isArray(packVerify?.files) ? packVerify?.files as Array<JsonObject> : [];
+      const verifyFiles = Array.isArray(packVerify?.checks) ? packVerify?.checks as Array<JsonObject> : [];
+      const verifyState = !packVerify ? { label: "待检查", tone: "neutral" as const } : packVerify.ok ? { label: "已通过", tone: "success" as const } : { label: "有差异", tone: "warning" as const };
       return (
         <div className="jk-pane">
           <PaneHeader eyebrow="PACK TRANSACTIONS" title="席位包预览、部署与回滚" description="每次写入前生成事务预览；部署保留备份，校验和恢复沿用即客破原有逻辑。" actions={<Button variant="secondary" size="sm" onClick={() => void loadPacks(packSeat)} disabled={Boolean(busy)} icon={<RefreshCw size={15} />}>刷新</Button>} />
@@ -668,21 +705,21 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
                 {previewFiles.slice(0, 12).map((file, index) => <div key={`${String(file.path)}-${index}`}><FileCode2 size={15} /><span>{String(file.path || file.file || `文件 ${index + 1}`)}</span><small>{String(file.action || file.status || "preview")}</small></div>)}
                 {!previewFiles.length && <p className="jk-empty">尚未生成预览。</p>}
               </div>
-              <div className="jk-card-actions"><Button onClick={() => void deployPack()} disabled={!packPreview || Boolean(busy)} icon={<Save size={15} />}>确认部署</Button><Button variant="secondary" onClick={() => void loadPacks(packSeat)} disabled={Boolean(busy)}>重新生成</Button></div>
+              <div className="jk-card-actions"><Button onClick={requestDeployPack} disabled={!packPreview || Boolean(busy)} icon={<Save size={15} />}>确认部署</Button><Button variant="secondary" onClick={() => void loadPacks(packSeat)} disabled={Boolean(busy)}>重新生成</Button></div>
             </section>
             <section className="jk-card">
-              <div className="jk-card-title"><div><span>VERIFY</span><h3>当前校验</h3></div><StatusBadge tone={verifyFiles.every((file) => file.ok !== false) ? "success" : "warning"}>{String(packVerify?.ok ?? "待检查")}</StatusBadge></div>
+              <div className="jk-card-title"><div><span>VERIFY</span><h3>当前校验</h3></div><StatusBadge tone={verifyState.tone}>{verifyState.label}</StatusBadge></div>
               <div className="jk-file-list">
-                {verifyFiles.slice(0, 12).map((file, index) => <div key={`${String(file.path)}-${index}`}><ShieldCheck size={15} /><span>{String(file.path || `文件 ${index + 1}`)}</span><small>{file.ok === false ? "异常" : "正常"}</small></div>)}
+                {verifyFiles.slice(0, 12).map((file, index) => <div key={`${String(file.path)}-${index}`}><ShieldCheck size={15} /><span>{String(file.path || `文件 ${index + 1}`)}</span><small>{file.ok === false ? "需要写入" : "已匹配"}</small></div>)}
                 {!verifyFiles.length && <p className="jk-empty">暂无校验结果。</p>}
               </div>
-              <Button variant="secondary" onClick={() => void run("pack-verify", async () => { const result = await callJikepo<JsonObject>("transaction", ["verify", { seat: packSeat }]); setPackVerify(result); return result; }, "校验完成")} disabled={Boolean(busy)} icon={<CheckCircle2 size={15} />}>执行校验</Button>
+              <Button variant="secondary" onClick={() => void run("pack-verify", async () => { const id = String(packPreview?.id || ""); if (!id) throw new Error("请先刷新生成写入预览"); const result = await callJikepo<JsonObject>("transaction", ["verify-pending", { id }]); setPackVerify(result); return result; }, "校验完成")} disabled={Boolean(busy) || !packPreview} icon={busy === "pack-verify" ? <Loader2 className="jk-spin" size={15} /> : <CheckCircle2 size={15} />}>{busy === "pack-verify" ? "校验中" : "执行校验"}</Button>
             </section>
           </div>
           <section className="jk-card">
             <div className="jk-card-title"><div><span>BACKUPS</span><h3>事务历史</h3></div><StatusBadge>{packHistory.length} 条</StatusBadge></div>
             <div className="jk-history-list">
-              {packHistory.map((item) => <div key={item.id}><History size={15} /><div><strong>{SEAT_LABELS[item.seat] || item.seat}</strong><span>{formatDate(item.at)} · {item.files} 文件 · {item.status}</span></div><Button size="sm" variant="secondary" onClick={() => void restorePack(item.id)} disabled={Boolean(busy)}>恢复</Button></div>)}
+              {packHistory.map((item) => <div key={item.id}><History size={15} /><div><strong>{SEAT_LABELS[item.seat] || item.seat}</strong><span>{formatDate(item.at)} · {item.files} 文件 · {item.status}</span></div><Button size="sm" variant="secondary" onClick={() => requestRestorePack(item.id)} disabled={Boolean(busy)}>恢复</Button></div>)}
               {!packHistory.length && <p className="jk-empty">还没有事务历史。</p>}
             </div>
           </section>
@@ -908,6 +945,37 @@ export function JikepoPage({ lang, section, embedded = false, relayProvider = nu
     <section className={cx("cx-jikepo-page", embedded && "cx-jikepo-page--embedded")} aria-label={lang === "zh" ? "统一功能页面" : "Unified feature page"}>
       {(notice || error) && <div className={cx("jk-notice", error && "is-error")}><span>{error || notice}</span><button onClick={() => { setError(""); setNotice(""); }} aria-label="关闭"><XCircle size={16} /></button></div>}
       {content}
+      <ModalShell
+        open={Boolean(seatMutationRequest)}
+        onClose={() => setSeatMutationRequest(null)}
+        title={seatMutationRequest?.action === "install" ? "确认安装 / 更新" : "确认卸载"}
+        description="此操作会修改所选客户端的配置文件；执行前会保留备份，之后可以在席位包页面恢复。"
+        size="sm"
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setSeatMutationRequest(null)} disabled={Boolean(busy)}>取消</Button>
+            <Button onClick={() => void confirmSeatMutation()} disabled={Boolean(busy)} data-initial-focus>{seatMutationRequest?.action === "install" ? "确认安装 / 更新" : "确认卸载"}</Button>
+          </>
+        )}
+      >
+        <p className="jk-confirm-copy">{seatMutationRequest?.targets.map((seat) => SEAT_LABELS[seat] || seat).join("、") || "未选择席位"}</p>
+        <p className="jk-card-copy">如果只想检查文件是否一致，请使用“席位包预览、部署与回滚”中的“执行校验”，它不会写入文件。</p>
+      </ModalShell>
+      <ModalShell
+        open={Boolean(packMutationRequest)}
+        onClose={() => setPackMutationRequest(null)}
+        title={packMutationRequest?.action === "deploy" ? "确认部署席位包" : "确认恢复备份"}
+        description={packMutationRequest?.action === "deploy" ? `将把 ${SEAT_LABELS[packSeat] || packSeat} 的配置写入当前目录，并保留原文件备份。` : "将按字节恢复选中的历史版本；发生冲突时会停止，不会强行覆盖。"}
+        size="sm"
+        footer={(
+          <>
+            <Button variant="secondary" onClick={() => setPackMutationRequest(null)} disabled={Boolean(busy)}>取消</Button>
+            <Button onClick={() => void confirmPackMutation()} disabled={Boolean(busy)} data-initial-focus>{packMutationRequest?.action === "deploy" ? "确认部署" : "确认恢复"}</Button>
+          </>
+        )}
+      >
+        <p className="jk-confirm-copy">{packMutationRequest?.action === "deploy" ? `目标目录：${packRoot || "未选择"}` : "恢复前会再次检查当前文件哈希，避免覆盖外部修改。"}</p>
+      </ModalShell>
     </section>
   );
 }
