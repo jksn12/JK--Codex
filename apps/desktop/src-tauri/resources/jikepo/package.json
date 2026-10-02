@@ -1,9 +1,9 @@
 {
   "name": "jikepo-desktop",
-  "productName": "即客破",
-  "version": "3.1.0-preview.1",
+  "productName": "即客-Codex",
+  "version": "0.3.28",
   "private": true,
-  "description": "即客破 · BREAK//OPEN 工作台",
+  "description": "即客-Codex · 本机模型、配置与分析工作台",
   "main": "src/main.js",
   "author": {
     "name": "3641397194-wq",

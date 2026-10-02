@@ -102,7 +102,7 @@ fn extract_backend_archive(app: &AppHandle, archive_path: &Path) -> Result<PathB
         .app_cache_dir()
         .map_err(|error| format!("无法定位即客破缓存目录：{}", error))?
         .join("jikepo")
-        .join("3.1.0-preview.1");
+        .join("0.3.28");
     let marker = cache_root.join(".ready");
     if marker.is_file() && cache_root.join("bridge.cjs").is_file() {
         return Ok(cache_root);
@@ -141,7 +141,7 @@ fn extract_backend_archive(app: &AppHandle, archive_path: &Path) -> Result<PathB
                 .map_err(|error| error.to_string())?;
         }
     }
-    fs::write(temp_root.join(".ready"), b"3.1.0-preview.1\n")
+    fs::write(temp_root.join(".ready"), b"0.3.28\n")
         .map_err(|error| error.to_string())?;
     if cache_root.exists() {
         fs::remove_dir_all(&cache_root).map_err(|error| error.to_string())?;

@@ -57,19 +57,19 @@ fn show_main_window(app: &tauri::AppHandle) -> tauri::Result<()> {
 
 pub(crate) fn restore_main_window(app: &tauri::AppHandle) {
     if let Err(error) = show_main_window(app) {
-        eprintln!("failed to restore the Codex-X window: {error}");
+        eprintln!("failed to restore the 即客-Codex window: {error}");
     }
 }
 
 pub(crate) fn setup_system_tray(app: &tauri::App) -> tauri::Result<()> {
     let show_window =
-        MenuItem::with_id(app, SHOW_WINDOW_MENU_ID, "显示 Codex-X", true, None::<&str>)?;
-    let quit_app = MenuItem::with_id(app, QUIT_APP_MENU_ID, "退出 Codex-X", true, None::<&str>)?;
+        MenuItem::with_id(app, SHOW_WINDOW_MENU_ID, "显示 即客-Codex", true, None::<&str>)?;
+    let quit_app = MenuItem::with_id(app, QUIT_APP_MENU_ID, "退出 即客-Codex", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show_window, &quit_app])?;
 
     let mut tray = TrayIconBuilder::with_id(TRAY_ID)
         .menu(&menu)
-        .tooltip("Codex-X")
+        .tooltip("即客-Codex")
         .show_menu_on_left_click(SHOW_TRAY_MENU_ON_LEFT_CLICK)
         .on_menu_event(|app, event| match event.id().as_ref() {
             SHOW_WINDOW_MENU_ID => restore_main_window(app),
@@ -107,18 +107,18 @@ pub(crate) fn handle_window_event(window: &tauri::Window, event: &WindowEvent) {
     if let WindowEvent::CloseRequested { api, .. } = event {
         api.prevent_close();
         if let Err(error) = window.hide() {
-            eprintln!("failed to hide the Codex-X window: {error}");
+            eprintln!("failed to hide the 即客-Codex window: {error}");
             return;
         }
 
         #[cfg(target_os = "windows")]
         if let Err(error) = window.set_skip_taskbar(true) {
-            eprintln!("failed to remove Codex-X from the taskbar: {error}");
+            eprintln!("failed to remove 即客-Codex from the taskbar: {error}");
         }
 
         #[cfg(target_os = "macos")]
         if let Err(error) = set_macos_tray_mode(window.app_handle(), false) {
-            eprintln!("failed to move Codex-X to the menu bar: {error}");
+            eprintln!("failed to move 即客-Codex to the menu bar: {error}");
         }
     }
 }
@@ -148,8 +148,8 @@ pub(crate) fn handle_run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
             restore_main_window(app);
             report_failover_lifecycle_error(
                 app,
-                "暂时无法退出 Codex-X",
-                &format!("自动切换的连接配置还未恢复，Codex-X 将继续运行。\n\n{error}\n\n请检查配置文件是否被占用，再重试退出。"),
+                "暂时无法退出 即客-Codex",
+                &format!("自动切换的连接配置还未恢复，即客-Codex 将继续运行。\n\n{error}\n\n请检查配置文件是否被占用，再重试退出。"),
             );
         }
     }
